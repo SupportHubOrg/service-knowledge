@@ -1,0 +1,25 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: service-knowledge
+  labels:
+    app: service-knowledge
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: service-knowledge
+  template:
+    metadata:
+      labels:
+        app: service-knowledge
+    spec:
+      containers:
+      - name: service-knowledge
+        #Replace with actual container registry URL
+        image: your-registry.com/issueresolutionorg/service-knowledge:latest
+        ports:
+        - containerPort: 8080
+        envFrom:
+        - configMapRef:
+            name: service-knowledge-config
