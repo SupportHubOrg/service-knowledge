@@ -33,12 +33,14 @@ import java.util.UUID;
  * in {@link KnowledgeArticleDraftEntity}; this service only orchestrates it, enforces access rules
  * via {@link KnowledgeAccessPolicy}, and emits domain events via {@link KnowledgeEventPublisher}.
  *
- * <p>All write methods run in a transaction so that the entity change and the resulting event are
- * committed atomically (the publisher only sends the event after commit).
+ * <p>All write methods run in a transaction so that the entity change and the outbox event are
+ * committed atomically. Kafka delivery happens later through the outbox publisher.
  */
 @Service
 @RequiredArgsConstructor
 public class KnowledgeDraftService {
+
+    private static final String KNOWLEDGE_DRAFT_RESOURCE = "Knowledge draft";
 
     private final KnowledgeArticleDraftRepository draftRepository;
     private final KnowledgeArticleRepository articleRepository;
@@ -80,7 +82,7 @@ public class KnowledgeDraftService {
     @Transactional(readOnly = true)
     public DraftResponse getDraft(CurrentUser user, UUID draftId) {
         var draft = draftRepository.findWithTagsById(draftId)
-                .orElseThrow(() -> new ResourceNotFoundException("Knowledge draft", draftId));
+                .orElseThrow(() -> new ResourceNotFoundException(KNOWLEDGE_DRAFT_RESOURCE, draftId));
         accessPolicy.requireDraftManagement(user, draft.getOrganizationId());
         return mapper.toDraftResponse(draft);
     }
@@ -96,7 +98,7 @@ public class KnowledgeDraftService {
     @Transactional
     public ArticleResponse publishDraft(CurrentUser user, UUID draftId, PublishDraftRequest request) {
         var draft = draftRepository.findWithTagsById(draftId)
-                .orElseThrow(() -> new ResourceNotFoundException("Knowledge draft", draftId));
+                .orElseThrow(() -> new ResourceNotFoundException(KNOWLEDGE_DRAFT_RESOURCE, draftId));
         accessPolicy.requireDraftManagement(user, draft.getOrganizationId());
 
         var title = request.title() == null || request.title().isBlank() ? draft.getTitle() : request.title().trim();
@@ -120,7 +122,7 @@ public class KnowledgeDraftService {
     @Transactional
     public DraftResponse rejectDraft(CurrentUser user, UUID draftId, RejectDraftRequest request) {
         var draft = draftRepository.findWithTagsById(draftId)
-                .orElseThrow(() -> new ResourceNotFoundException("Knowledge draft", draftId));
+                .orElseThrow(() -> new ResourceNotFoundException(KNOWLEDGE_DRAFT_RESOURCE, draftId));
         accessPolicy.requireDraftManagement(user, draft.getOrganizationId());
         draft.reject(request.rejectionReason().trim(), clock.instant());
         eventPublisher.publishKnowledgeArticleRejected(draft, user.userId());

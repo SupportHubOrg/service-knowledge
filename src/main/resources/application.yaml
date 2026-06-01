@@ -80,3 +80,19 @@ application:
       owned:
         knowledge-management-events: ${KAFKA_TOPIC_KNOWLEDGE_MANAGEMENT_EVENTS:knowledge-management-events}
         knowledge-management-events-dlt: ${KAFKA_TOPIC_KNOWLEDGE_MANAGEMENT_DLT:knowledge-management-events-dlt}
+  outbox:
+    batch-size: ${OUTBOX_BATCH_SIZE:50}
+    poll-delay-ms: ${OUTBOX_POLL_DELAY_MS:2000}
+    lock-at-most-for: ${OUTBOX_LOCK_AT_MOST_FOR:PT30S}
+    lock-at-least-for: ${OUTBOX_LOCK_AT_LEAST_FOR:PT0S}
+    batch-send-timeout: ${OUTBOX_BATCH_SEND_TIMEOUT:PT40S}
+    retry-backoff: ${OUTBOX_RETRY_BACKOFF:PT1S}
+    max-retry-backoff: ${OUTBOX_MAX_RETRY_BACKOFF:PT5M}
+    stuck-timeout: ${OUTBOX_STUCK_TIMEOUT:PT2M}
+    routing:
+      knowledge:
+        event-topics:
+          KnowledgeArticleDraftSaved: ${KAFKA_TOPIC_KNOWLEDGE_MANAGEMENT_EVENTS:knowledge-management-events}
+          KnowledgeArticleDraftSaveFailed: ${KAFKA_TOPIC_KNOWLEDGE_MANAGEMENT_EVENTS:knowledge-management-events}
+          KnowledgeArticlePublished: ${KAFKA_TOPIC_KNOWLEDGE_MANAGEMENT_EVENTS:knowledge-management-events}
+          KnowledgeArticleRejected: ${KAFKA_TOPIC_KNOWLEDGE_MANAGEMENT_EVENTS:knowledge-management-events}

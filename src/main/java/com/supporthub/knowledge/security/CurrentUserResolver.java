@@ -6,6 +6,7 @@ import org.springframework.stereotype.Component;
 import java.util.Collection;
 import java.util.LinkedHashSet;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import java.util.UUID;
 
@@ -24,6 +25,8 @@ import java.util.UUID;
 @Component
 public class CurrentUserResolver {
 
+    private static final String ROLES_CLAIM = "roles";
+
     /** Builds the {@link CurrentUser} from the token subject, organization claim and roles. */
     public CurrentUser from(Jwt jwt) {
         return new CurrentUser(
@@ -34,12 +37,12 @@ public class CurrentUserResolver {
     }
 
     private UUID organizationId(Jwt jwt) {
-        var organizationId = firstStringClaim(jwt, "organization_id", "organizationId");
+        var organizationId = firstStringClaim(jwt);
         return organizationId == null || organizationId.isBlank() ? null : UUID.fromString(organizationId);
     }
 
-    private String firstStringClaim(Jwt jwt, String... names) {
-        for (String name : names) {
+    private String firstStringClaim(Jwt jwt) {
+        for (String name : new String[]{"organization_id", "organizationId"}) {
             var value = jwt.getClaimAsString(name);
             if (value != null) {
                 return value;
@@ -50,25 +53,23 @@ public class CurrentUserResolver {
 
     private Set<SupportHubRole> roles(Jwt jwt) {
         var roles = new LinkedHashSet<SupportHubRole>();
-        addStringRoles(roles, jwt.getClaimAsStringList("roles"));
+        addStringRoles(roles, jwt.getClaimAsStringList(ROLES_CLAIM));
         addKeycloakRealmRoles(roles, jwt);
         addKeycloakResourceRoles(roles, jwt);
         return roles;
     }
 
-    @SuppressWarnings("unchecked")
     private void addKeycloakRealmRoles(Set<SupportHubRole> roles, Jwt jwt) {
         Map<String, Object> realmAccess = jwt.getClaim("realm_access");
         if (realmAccess == null) {
             return;
         }
-        var rawRoles = realmAccess.get("roles");
+        var rawRoles = realmAccess.get(ROLES_CLAIM);
         if (rawRoles instanceof Collection<?> collection) {
             addStringRoles(roles, collection.stream().map(String::valueOf).toList());
         }
     }
 
-    @SuppressWarnings("unchecked")
     private void addKeycloakResourceRoles(Set<SupportHubRole> roles, Jwt jwt) {
         Map<String, Object> resourceAccess = jwt.getClaim("resource_access");
         if (resourceAccess == null) {
@@ -76,7 +77,7 @@ public class CurrentUserResolver {
         }
         for (Object clientAccess : resourceAccess.values()) {
             if (clientAccess instanceof Map<?, ?> clientMap) {
-                var rawRoles = clientMap.get("roles");
+                var rawRoles = clientMap.get(ROLES_CLAIM);
                 if (rawRoles instanceof Collection<?> collection) {
                     addStringRoles(roles, collection.stream().map(String::valueOf).toList());
                 }
@@ -91,7 +92,7 @@ public class CurrentUserResolver {
         rawRoles.stream()
                 .map(this::normalize)
                 .map(this::roleOrNull)
-                .filter(role -> role != null)
+                .filter(Objects::nonNull)
                 .forEach(roles::add);
     }
 

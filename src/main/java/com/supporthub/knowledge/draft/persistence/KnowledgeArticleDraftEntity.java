@@ -98,7 +98,6 @@ public class KnowledgeArticleDraftEntity {
                 .status(DraftStatus.PENDING_REVIEW)
                 .createdAt(now)
                 .updatedAt(now)
-                .version(0L)
                 .build();
         draft.replaceTags(tagIds, now);
         return draft;

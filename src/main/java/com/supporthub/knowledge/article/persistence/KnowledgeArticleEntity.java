@@ -106,7 +106,6 @@ public class KnowledgeArticleEntity {
                 .publishedAt(now)
                 .createdAt(now)
                 .updatedAt(now)
-                .version(0L)
                 .build();
         draft.getTags().stream()
                 .map(tag -> KnowledgeArticleTagEntity.forArticle(article, tag.getTagId(), now))

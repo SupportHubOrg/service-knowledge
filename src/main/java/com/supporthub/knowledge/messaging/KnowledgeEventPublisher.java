@@ -6,9 +6,9 @@ import com.supporthub.knowledge.draft.persistence.KnowledgeArticleDraftEntity;
 import java.util.UUID;
 
 /**
- * Outbound domain events emitted by this service. These form the public contract other services
- * (notably ticket-management) subscribe to. The Kafka implementation is
- * {@link com.supporthub.knowledge.messaging.producer.KafkaKnowledgeEventPublisher}.
+ * Outbound integration events emitted by this service. These form the public contract other
+ * services subscribe to. The implementation stores events in the transactional outbox; Kafka
+ * delivery is handled asynchronously by the outbox publisher.
  */
 public interface KnowledgeEventPublisher {
 

@@ -2,12 +2,18 @@ package com.supporthub.knowledge.messaging.event;
 
 import java.util.UUID;
 
-/** Outbound payload of {@code KnowledgeArticleRejected}: a manager declined a draft, with reason. */
 public record KnowledgeArticleRejectedPayload(
         UUID draftId,
         UUID sourceTicketId,
         UUID organizationId,
         UUID rejectedById,
         String rejectionReason
-) {
+) implements IntegrationEventPayload {
+
+    public static final String EVENT_TYPE = "KnowledgeArticleRejected";
+
+    @Override
+    public String eventType() {
+        return EVENT_TYPE;
+    }
 }
