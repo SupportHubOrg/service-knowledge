@@ -243,11 +243,17 @@ class OutboxKafkaIntegrationTest extends KnowledgeIntegrationTestSupport {
         assertThat(consumerRecord.offset()).isNotNegative();
 
         var root = objectMapper.readTree(consumerRecord.value());
-        assertThat(UUID.fromString(root.path("eventId").asString())).isNotNull();
-        assertThat(root.path("eventType").asString()).isEqualTo(expectedEventType);
-        assertThat(root.path("eventVersion").intValue()).isEqualTo(1);
-        assertThat(Instant.parse(root.path("occurredAt").asString())).isNotNull();
-        assertThat(root.path("source").asString()).isEqualTo("knowledge-management-service");
+        var metadata = root.path("metadata");
+        assertThat(UUID.fromString(metadata.path("eventId").asString())).isNotNull();
+        assertThat(metadata.path("eventType").asString()).isEqualTo(expectedEventType);
+        assertThat(metadata.path("version").intValue()).isEqualTo(1);
+        assertThat(Instant.parse(metadata.path("timestamp").asString())).isNotNull();
+        assertThat(metadata.path("source").asString()).isEqualTo("knowledge-management-service");
+        assertThat(root.path("eventId").isMissingNode()).isTrue();
+        assertThat(root.path("eventType").isMissingNode()).isTrue();
+        assertThat(root.path("eventVersion").isMissingNode()).isTrue();
+        assertThat(root.path("occurredAt").isMissingNode()).isTrue();
+        assertThat(root.path("source").isMissingNode()).isTrue();
         assertThat(root.path("payload").isObject()).isTrue();
         assertThat(root.path("payload").path("eventType").isMissingNode()).isTrue();
         return root;

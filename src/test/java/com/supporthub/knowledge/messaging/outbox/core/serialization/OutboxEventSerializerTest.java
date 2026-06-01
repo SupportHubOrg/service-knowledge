@@ -45,7 +45,11 @@ class OutboxEventSerializerTest {
         assertThat(eventRecord.eventId()).isEqualTo(eventId);
         assertThat(eventRecord.eventType()).isEqualTo("KnowledgeArticlePublished");
         assertThat(eventRecord.payload())
+                .contains("\"metadata\":{\"eventId\":\"6cf547c2-8b4c-4d92-944a-79e4f1d801c9\"")
                 .contains("\"eventType\":\"KnowledgeArticlePublished\"")
+                .contains("\"version\":1")
+                .contains("\"timestamp\":\"2026-06-01T12:00:00Z\"")
+                .contains("\"source\":\"knowledge-management-service\"")
                 .contains("\"payload\":{\"articleId\":\"aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa\"");
     }
 }
