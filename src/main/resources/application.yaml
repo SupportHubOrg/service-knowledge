@@ -1,0 +1,82 @@
+server:
+  port: ${SERVER_PORT:8080}
+
+spring:
+  application:
+    name: knowledge-management-service
+  datasource:
+    url: ${DB_URL:jdbc:postgresql://localhost:5432/knowledge}
+    username: ${DB_USERNAME:knowledge}
+    password: ${DB_PASSWORD:knowledge}
+  jpa:
+    open-in-view: false
+    hibernate:
+      ddl-auto: validate
+    properties:
+      hibernate:
+        jdbc:
+          batch_size: 50
+        order_inserts: true
+        order_updates: true
+  liquibase:
+    change-log: classpath:db/changelog/db.changelog-master.yaml
+  security:
+    oauth2:
+      resourceserver:
+        jwt:
+          issuer-uri: ${JWT_ISSUER_URI:http://localhost:8081/realms/supporthub}
+  kafka:
+    bootstrap-servers: ${KAFKA_BOOTSTRAP_SERVERS:localhost:9092}
+    producer:
+      acks: all
+      retries: 2147483647
+      properties:
+        enable.idempotence: true
+        max.in.flight.requests.per.connection: 5
+        delivery.timeout.ms: 35000
+        linger.ms: 20
+        request.timeout.ms: 10000
+        retry.backoff.ms: 1000
+    consumer:
+      group-id: ${KAFKA_CONSUMER_GROUP:knowledge-management-service}
+      auto-offset-reset: latest
+      enable-auto-commit: false
+
+springdoc:
+  api-docs:
+    path: /v3/api-docs
+  swagger-ui:
+    path: /swagger-ui.html
+    operations-sorter: method
+    tags-sorter: alpha
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health, info, metrics, prometheus
+  endpoint:
+    health:
+      probes:
+        enabled: true
+
+application:
+  security:
+    audience: ${JWT_AUDIENCE:knowledge-management-service}
+  kafka:
+    consumer:
+      ticket-management-events: ${KAFKA_TOPIC_TICKET_MANAGEMENT_EVENTS:ticket-management-events}
+    producer:
+      knowledge-management-events: ${KAFKA_TOPIC_KNOWLEDGE_MANAGEMENT_EVENTS:knowledge-management-events}
+    dlt:
+      name: ${KAFKA_TOPIC_KNOWLEDGE_MANAGEMENT_DLT:knowledge-management-events-dlt}
+      backoff-ms: ${KAFKA_DLT_BACKOFF_MS:1000}
+      max-attempts: ${KAFKA_DLT_MAX_ATTEMPTS:5}
+    topics:
+      defaults:
+        partitions: ${KAFKA_TOPIC_PARTITIONS:3}
+        replicas: ${KAFKA_TOPIC_REPLICAS:1}
+        min-in-sync-replicas: ${KAFKA_TOPIC_MIN_ISR:1}
+      owned:
+        knowledge-management-events: ${KAFKA_TOPIC_KNOWLEDGE_MANAGEMENT_EVENTS:knowledge-management-events}
+        knowledge-management-events-dlt: ${KAFKA_TOPIC_KNOWLEDGE_MANAGEMENT_DLT:knowledge-management-events-dlt}
