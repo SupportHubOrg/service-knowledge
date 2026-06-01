@@ -14,6 +14,8 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 class OutboxEventSerializerTest {
 
+    private static final String ARTICLE_PUBLISHED_EVENT = "KnowledgeArticlePublished";
+
     private final OutboxEventSerializer serializer = new OutboxEventSerializer(new ObjectMapper());
 
     @Test
@@ -22,7 +24,7 @@ class OutboxEventSerializerTest {
         var articleId = UUID.fromString("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa");
         var event = new IntegrationEventEnvelope(
                 eventId,
-                KnowledgeArticlePublishedPayload.EVENT_TYPE,
+                ARTICLE_PUBLISHED_EVENT,
                 1,
                 Instant.parse("2026-06-01T12:00:00Z"),
                 "knowledge-management-service",

@@ -63,9 +63,27 @@ management:
 application:
   security:
     audience: ${JWT_AUDIENCE:knowledge-management-service}
+  integration-events:
+    contracts:
+      knowledge-article-proposed:
+        event-type: ${EVENT_KNOWLEDGE_ARTICLE_PROPOSED:KnowledgeArticleProposed}
+        version: ${EVENT_KNOWLEDGE_ARTICLE_PROPOSED_VERSION:1}
+      knowledge-article-draft-saved:
+        event-type: ${EVENT_KNOWLEDGE_ARTICLE_DRAFT_SAVED:KnowledgeArticleDraftSaved}
+        version: ${EVENT_KNOWLEDGE_ARTICLE_DRAFT_SAVED_VERSION:1}
+      knowledge-article-draft-save-failed:
+        event-type: ${EVENT_KNOWLEDGE_ARTICLE_DRAFT_SAVE_FAILED:KnowledgeArticleDraftSaveFailed}
+        version: ${EVENT_KNOWLEDGE_ARTICLE_DRAFT_SAVE_FAILED_VERSION:1}
+      knowledge-article-published:
+        event-type: ${EVENT_KNOWLEDGE_ARTICLE_PUBLISHED:KnowledgeArticlePublished}
+        version: ${EVENT_KNOWLEDGE_ARTICLE_PUBLISHED_VERSION:1}
+      knowledge-article-rejected:
+        event-type: ${EVENT_KNOWLEDGE_ARTICLE_REJECTED:KnowledgeArticleRejected}
+        version: ${EVENT_KNOWLEDGE_ARTICLE_REJECTED_VERSION:1}
   kafka:
     consumer:
       ticket-management-events: ${KAFKA_TOPIC_TICKET_MANAGEMENT_EVENTS:ticket-management-events}
+      concurrency: ${KAFKA_CONSUMER_CONCURRENCY:3}
     producer:
       knowledge-management-events: ${KAFKA_TOPIC_KNOWLEDGE_MANAGEMENT_EVENTS:knowledge-management-events}
     dlt:

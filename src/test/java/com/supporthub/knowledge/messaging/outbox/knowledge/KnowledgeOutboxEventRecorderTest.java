@@ -2,7 +2,7 @@ package com.supporthub.knowledge.messaging.outbox.knowledge;
 
 import com.supporthub.knowledge.article.persistence.KnowledgeArticleEntity;
 import com.supporthub.knowledge.draft.persistence.KnowledgeArticleDraftEntity;
-import com.supporthub.knowledge.messaging.event.IntegrationEventPayload;
+import com.supporthub.knowledge.messaging.event.KnowledgeArticlePublishedPayload;
 import com.supporthub.knowledge.messaging.outbox.core.persistence.OutboxEventWriter;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
@@ -42,8 +42,8 @@ class KnowledgeOutboxEventRecorderTest {
 
         recorder.publishKnowledgeArticlePublished(article);
 
-        var eventCaptor = ArgumentCaptor.forClass(IntegrationEventPayload.class);
+        var eventCaptor = ArgumentCaptor.forClass(Object.class);
         verify(eventWriter).append(eq(sourceTicketId.toString()), eventCaptor.capture());
-        assertThat(eventCaptor.getValue().eventType()).isEqualTo("KnowledgeArticlePublished");
+        assertThat(eventCaptor.getValue()).isInstanceOf(KnowledgeArticlePublishedPayload.class);
     }
 }

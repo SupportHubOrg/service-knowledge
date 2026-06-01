@@ -23,6 +23,7 @@ import org.springframework.kafka.core.ProducerFactory;
 import org.springframework.kafka.listener.DeadLetterPublishingRecoverer;
 import org.springframework.kafka.listener.DefaultErrorHandler;
 import org.springframework.kafka.listener.CommonErrorHandler;
+import org.springframework.kafka.listener.ContainerProperties;
 import org.springframework.util.backoff.FixedBackOff;
 
 import java.util.HashMap;
@@ -64,6 +65,9 @@ public class KafkaConfig {
     @Value("${spring.kafka.consumer.auto-offset-reset:latest}")
     private String autoOffsetReset;
 
+    @Value("${application.kafka.consumer.concurrency:1}")
+    private Integer consumerConcurrency;
+
     @Bean
     KafkaAdmin kafkaAdmin() {
         return new KafkaAdmin(Map.of(AdminClientConfig.BOOTSTRAP_SERVERS_CONFIG, bootstrapServers));
@@ -103,9 +107,25 @@ public class KafkaConfig {
     ConcurrentKafkaListenerContainerFactory<String, String> kafkaListenerContainerFactory(
             ConsumerFactory<String, String> consumerFactory,
             KafkaTemplate<String, String> kafkaTemplate) {
+        return listenerContainerFactory(consumerFactory, kafkaTemplate);
+    }
+
+    @Bean
+    ConcurrentKafkaListenerContainerFactory<String, String> inboxKafkaListenerContainerFactory(
+            ConsumerFactory<String, String> consumerFactory,
+            KafkaTemplate<String, String> kafkaTemplate) {
+        return listenerContainerFactory(consumerFactory, kafkaTemplate);
+    }
+
+    private ConcurrentKafkaListenerContainerFactory<String, String> listenerContainerFactory(
+            ConsumerFactory<String, String> consumerFactory,
+            KafkaTemplate<String, String> kafkaTemplate) {
         var factory = new ConcurrentKafkaListenerContainerFactory<String, String>();
         factory.setConsumerFactory(consumerFactory);
         factory.setCommonErrorHandler(errorHandler(kafkaTemplate));
+        factory.setConcurrency(consumerConcurrency);
+        factory.getContainerProperties().setAckMode(ContainerProperties.AckMode.RECORD);
+        factory.getContainerProperties().setSyncCommits(true);
         return factory;
     }
 

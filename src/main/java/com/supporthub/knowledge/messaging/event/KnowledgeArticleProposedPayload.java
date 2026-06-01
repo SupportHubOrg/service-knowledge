@@ -15,6 +15,7 @@ import java.util.UUID;
  * @param proposedSubject suggested title for the draft
  * @param tags            tag ids to attach to the draft
  */
+@IntegrationEvent("knowledge-article-proposed")
 public record KnowledgeArticleProposedPayload(
         UUID ticketId,
         UUID organizationId,

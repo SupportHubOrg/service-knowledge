@@ -17,15 +17,17 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 class KnowledgeOutboxRouteResolverTest {
 
     private static final Clock CLOCK = Clock.fixed(Instant.parse("2026-06-01T12:00:00Z"), ZoneOffset.UTC);
+    private static final String ARTICLE_PUBLISHED_EVENT = "KnowledgeArticlePublished";
 
     @Test
     void shouldRouteByEventType() {
         var resolver = new KnowledgeOutboxRouteResolver(new KnowledgeOutboxRoutingProperties(Map.of(
-                KnowledgeArticlePublishedPayload.EVENT_TYPE, "knowledge-management-events"
+                ARTICLE_PUBLISHED_EVENT, "knowledge-management-events"
         )));
 
         var route = resolver.resolve("ticket-1", IntegrationEventEnvelope.of(
-                KnowledgeArticlePublishedPayload.EVENT_TYPE,
+                ARTICLE_PUBLISHED_EVENT,
+                1,
                 "knowledge-management-service",
                 publishedPayload(),
                 CLOCK
@@ -48,7 +50,7 @@ class KnowledgeOutboxRouteResolverTest {
     @Test
     void shouldRejectBlankMessageKey() {
         var resolver = new KnowledgeOutboxRouteResolver(new KnowledgeOutboxRoutingProperties(Map.of(
-                KnowledgeArticlePublishedPayload.EVENT_TYPE, "knowledge-management-events"
+                ARTICLE_PUBLISHED_EVENT, "knowledge-management-events"
         )));
         var event = publishedEvent();
 
@@ -59,7 +61,8 @@ class KnowledgeOutboxRouteResolverTest {
 
     private IntegrationEventEnvelope publishedEvent() {
         return IntegrationEventEnvelope.of(
-                KnowledgeArticlePublishedPayload.EVENT_TYPE,
+                ARTICLE_PUBLISHED_EVENT,
+                1,
                 "knowledge-management-service",
                 publishedPayload(),
                 CLOCK

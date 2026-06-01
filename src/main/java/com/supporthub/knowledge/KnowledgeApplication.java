@@ -2,6 +2,7 @@ package com.supporthub.knowledge;
 
 import com.supporthub.knowledge.messaging.config.KafkaDltProperties;
 import com.supporthub.knowledge.messaging.config.KafkaTopicProvisioningProperties;
+import com.supporthub.knowledge.messaging.event.IntegrationEventProperties;
 import com.supporthub.knowledge.messaging.outbox.core.config.OutboxProperties;
 import com.supporthub.knowledge.messaging.outbox.knowledge.KnowledgeOutboxRoutingProperties;
 import net.javacrumbs.shedlock.spring.annotation.EnableSchedulerLock;
@@ -16,6 +17,7 @@ import org.springframework.scheduling.annotation.EnableScheduling;
 @EnableConfigurationProperties({
         KafkaDltProperties.class,
         KafkaTopicProvisioningProperties.class,
+        IntegrationEventProperties.class,
         OutboxProperties.class,
         KnowledgeOutboxRoutingProperties.class
 })

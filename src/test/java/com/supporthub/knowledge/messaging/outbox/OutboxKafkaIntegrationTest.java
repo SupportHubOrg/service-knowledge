@@ -4,9 +4,7 @@ import com.supporthub.knowledge.article.api.ArticleResponse;
 import com.supporthub.knowledge.draft.api.DraftResponse;
 import com.supporthub.knowledge.draft.api.PublishDraftRequest;
 import com.supporthub.knowledge.draft.application.KnowledgeDraftService;
-import com.supporthub.knowledge.messaging.event.KnowledgeArticleDraftSavedPayload;
 import com.supporthub.knowledge.messaging.event.KnowledgeArticleProposedPayload;
-import com.supporthub.knowledge.messaging.event.KnowledgeArticlePublishedPayload;
 import com.supporthub.knowledge.messaging.outbox.core.persistence.OutboxEventStatus;
 import com.supporthub.knowledge.messaging.outbox.core.publisher.OutboxEventPublisher;
 import com.supporthub.knowledge.security.CurrentUser;
@@ -34,6 +32,9 @@ import java.util.UUID;
 import static org.assertj.core.api.Assertions.assertThat;
 
 class OutboxKafkaIntegrationTest extends KnowledgeIntegrationTestSupport {
+
+    private static final String DRAFT_SAVED_EVENT = "KnowledgeArticleDraftSaved";
+    private static final String ARTICLE_PUBLISHED_EVENT = "KnowledgeArticlePublished";
 
     private final KnowledgeDraftService draftService;
     private final OutboxEventPublisher outboxPublisher;
@@ -128,9 +129,9 @@ class OutboxKafkaIntegrationTest extends KnowledgeIntegrationTestSupport {
         assertThat(outboxRows())
                 .extracting(row -> row.get("event_type"))
                 .containsExactly(
-                        KnowledgeArticleDraftSavedPayload.EVENT_TYPE,
-                        KnowledgeArticlePublishedPayload.EVENT_TYPE,
-                        KnowledgeArticleDraftSavedPayload.EVENT_TYPE
+                        DRAFT_SAVED_EVENT,
+                        ARTICLE_PUBLISHED_EVENT,
+                        DRAFT_SAVED_EVENT
                 );
     }
 
@@ -144,7 +145,7 @@ class OutboxKafkaIntegrationTest extends KnowledgeIntegrationTestSupport {
         assertDraftSavedEvent(firstTicketDraftRecord, data, publishedDraft.firstDraft());
 
         var secondTicketDraftRecord = consumerRecordByKey(firstBatch, data.secondTicketId().toString());
-        var secondDraftSaved = assertEnvelope(secondTicketDraftRecord, KnowledgeArticleDraftSavedPayload.EVENT_TYPE);
+        var secondDraftSaved = assertEnvelope(secondTicketDraftRecord, DRAFT_SAVED_EVENT);
         assertThat(secondDraftSaved.path("payload").path("sourceTicketId").asString())
                 .isEqualTo(data.secondTicketId().toString());
         assertThat(secondDraftSaved.path("payload").path("tags")).hasSize(1);
@@ -154,7 +155,7 @@ class OutboxKafkaIntegrationTest extends KnowledgeIntegrationTestSupport {
     private void assertDraftSavedEvent(ConsumerRecord<String, String> consumerRecord,
                                        TestData data,
                                        DraftResponse firstDraft) throws Exception {
-        var draftSaved = assertEnvelope(consumerRecord, KnowledgeArticleDraftSavedPayload.EVENT_TYPE);
+        var draftSaved = assertEnvelope(consumerRecord, DRAFT_SAVED_EVENT);
         assertThat(draftSaved.path("payload").path("draftId").asString()).isEqualTo(firstDraft.id().toString());
         assertThat(draftSaved.path("payload").path("sourceTicketId").asString())
                 .isEqualTo(data.firstTicketId().toString());
@@ -168,7 +169,7 @@ class OutboxKafkaIntegrationTest extends KnowledgeIntegrationTestSupport {
                                       ConsumerRecord<String, String> firstTicketDraftRecord,
                                       TestData data,
                                       PublishedDraft publishedDraft) throws Exception {
-        var articlePublished = assertEnvelope(consumerRecord, KnowledgeArticlePublishedPayload.EVENT_TYPE);
+        var articlePublished = assertEnvelope(consumerRecord, ARTICLE_PUBLISHED_EVENT);
         assertThat(consumerRecord.key()).isEqualTo(data.firstTicketId().toString());
         assertThat(consumerRecord.partition()).isEqualTo(firstTicketDraftRecord.partition());
         assertThat(consumerRecord.offset()).isGreaterThan(firstTicketDraftRecord.offset());

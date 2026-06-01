@@ -1,6 +1,4 @@
 package com.supporthub.knowledge.messaging.outbox.core.persistence;
-
-import com.supporthub.knowledge.messaging.event.IntegrationEventPayload;
 import com.supporthub.knowledge.messaging.outbox.core.model.OutboxEventEnvelopeFactory;
 import com.supporthub.knowledge.messaging.outbox.core.serialization.OutboxEventSerializer;
 import com.supporthub.knowledge.messaging.outbox.core.spi.OutboxRouteResolver;
@@ -26,7 +24,7 @@ public class OutboxEventWriter {
     private final Clock clock;
 
     @Transactional
-    public void append(String messageKey, IntegrationEventPayload payload) {
+    public void append(String messageKey, Object payload) {
         var event = envelopeFactory.create(payload);
         var route = routeResolver.resolve(messageKey, event);
         var serializedEvent = serializer.serialize(event, route);
