@@ -3,7 +3,9 @@ package com.supporthub.knowledge.shared.identity;
 import com.supporthub.knowledge.shared.error.BusinessValidationException;
 import jakarta.persistence.Column;
 import jakarta.persistence.Embeddable;
+import lombok.AccessLevel;
 import lombok.EqualsAndHashCode;
+import lombok.NoArgsConstructor;
 
 import java.util.UUID;
 
@@ -13,14 +15,12 @@ import java.util.UUID;
  */
 @Embeddable
 @EqualsAndHashCode
+@NoArgsConstructor(access = AccessLevel.PROTECTED) // for JPA
 public final class MessageId {
 
     @Column(name = "message_id")
     private UUID value;
 
-    private MessageId() {
-        // for JPA
-    }
 
     private MessageId(UUID value) {
         if (value == null) {
