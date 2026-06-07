@@ -39,10 +39,10 @@ import java.util.Map;
  * <p><b>Error handling</b> is the key part to understand. The listener uses a
  * {@link DefaultErrorHandler} whose behaviour depends on the exception type thrown by the consumer:
  * <ul>
- *   <li>{@link RetryableKafkaProcessingException} — retried in-memory with a
+ *   <li>{@link RetryableKafkaProcessingException} - retried in-memory with a
  *       {@link FixedBackOff} (backoff and max attempts come from {@link KafkaDltProperties}).
  *       Used for transient failures (e.g. DB hiccups).</li>
- *   <li>{@link NonRetryableKafkaProcessingException} — never retried; the record is published
+ *   <li>{@link NonRetryableKafkaProcessingException} - never retried; the record is published
  *       straight to the dead-letter topic. Used for poison messages (malformed payload, unknown
  *       event type) that can never succeed.</li>
  * </ul>

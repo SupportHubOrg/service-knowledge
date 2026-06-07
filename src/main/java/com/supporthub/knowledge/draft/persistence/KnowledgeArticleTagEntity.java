@@ -8,11 +8,12 @@ import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
+import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
-import lombok.Setter;
+import org.hibernate.annotations.CreationTimestamp;
 
 import java.time.Instant;
 import java.util.UUID;
@@ -20,10 +21,9 @@ import java.util.UUID;
 @Entity
 @Table(name = "knowledge_article_tags")
 @Getter
-@Setter
-@Builder
-@NoArgsConstructor
-@AllArgsConstructor
+@Builder(access = AccessLevel.PRIVATE)
+@NoArgsConstructor(access = AccessLevel.PROTECTED)
+@AllArgsConstructor(access = AccessLevel.PRIVATE)
 public class KnowledgeArticleTagEntity {
 
     @Id
@@ -41,23 +41,22 @@ public class KnowledgeArticleTagEntity {
     private UUID tagId;
 
     @Column(nullable = false, name = "created_at")
+    @CreationTimestamp
     private Instant createdAt;
 
-    public static KnowledgeArticleTagEntity forDraft(KnowledgeArticleDraftEntity draft, UUID tagId, Instant now) {
+    public static KnowledgeArticleTagEntity forDraft(KnowledgeArticleDraftEntity draft, UUID tagId) {
         return KnowledgeArticleTagEntity.builder()
                 .id(UUID.randomUUID())
                 .draft(draft)
                 .tagId(tagId)
-                .createdAt(now)
                 .build();
     }
 
-    public static KnowledgeArticleTagEntity forArticle(KnowledgeArticleEntity article, UUID tagId, Instant now) {
+    public static KnowledgeArticleTagEntity forArticle(KnowledgeArticleEntity article, UUID tagId) {
         return KnowledgeArticleTagEntity.builder()
                 .id(UUID.randomUUID())
                 .article(article)
                 .tagId(tagId)
-                .createdAt(now)
                 .build();
     }
 }

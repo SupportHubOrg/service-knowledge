@@ -19,7 +19,7 @@ public interface OutboxEventRepository extends JpaRepository<OutboxEventEntity, 
             select *
             from outbox_events o
             where o.status = 'PENDING'
-              and (o.next_attempt_at is null or o.next_attempt_at <= :now)
+              and (o.next_attempt_at is null or o.next_attempt_at <= :publishableAt)
               and not exists (
                   select 1
                   from outbox_events e2
@@ -32,18 +32,19 @@ public interface OutboxEventRepository extends JpaRepository<OutboxEventEntity, 
             limit :limit
             for update skip locked
             """, nativeQuery = true)
-    List<OutboxEventEntity> lockPendingForPublishing(@Param("now") Instant now, @Param("limit") int limit);
+    List<OutboxEventEntity> lockPendingForPublishing(@Param("publishableAt") Instant publishableAt,
+                                                     @Param("limit") int limit);
 
     @Modifying
     @Query(value = """
             update outbox_events
             set status = 'PENDING',
                 locked_at = null,
-                next_attempt_at = :now,
+                next_attempt_at = :recoveredAt,
                 last_error = 'Recovered stuck IN_PROGRESS event',
-                updated_at = :now
+                updated_at = :recoveredAt
             where status = 'IN_PROGRESS'
               and locked_at < :threshold
             """, nativeQuery = true)
-    int recoverStuckEvents(@Param("threshold") Instant threshold, @Param("now") Instant now);
+    int recoverStuckEvents(@Param("threshold") Instant threshold, @Param("recoveredAt") Instant recoveredAt);
 }

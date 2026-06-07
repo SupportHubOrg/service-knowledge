@@ -1,6 +1,7 @@
 package com.supporthub.knowledge.messaging.outbox.knowledge;
 
 import com.supporthub.knowledge.article.persistence.KnowledgeArticleEntity;
+import com.supporthub.knowledge.draft.domain.PendingDraftProposal;
 import com.supporthub.knowledge.draft.persistence.KnowledgeArticleDraftEntity;
 import com.supporthub.knowledge.messaging.event.KnowledgeArticlePublishedPayload;
 import com.supporthub.knowledge.messaging.outbox.core.persistence.OutboxEventWriter;
@@ -26,12 +27,14 @@ class KnowledgeOutboxEventRecorderTest {
     void shouldAppendPublishedArticleEventKeyedBySourceTicket() {
         var sourceTicketId = UUID.randomUUID();
         var draft = KnowledgeArticleDraftEntity.pendingGeneration(
-                sourceTicketId,
                 UUID.randomUUID(),
-                UUID.randomUUID(),
-                "Draft title",
-                List.of(UUID.randomUUID()),
-                Instant.parse("2026-06-01T11:00:00Z")
+                PendingDraftProposal.builder()
+                        .sourceTicketId(sourceTicketId)
+                        .organizationId(UUID.randomUUID())
+                        .proposerId(UUID.randomUUID())
+                        .title("Draft title")
+                        .tagIds(List.of(UUID.randomUUID()))
+                        .build()
         );
         draft.completeGeneration("Generated content", Instant.parse("2026-06-01T11:30:00Z"));
         draft.publish("Article title", "Article content", Instant.parse("2026-06-01T12:00:00Z"));

@@ -13,6 +13,8 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
+import org.hibernate.annotations.CreationTimestamp;
+import org.hibernate.annotations.UpdateTimestamp;
 
 import java.time.Instant;
 import java.util.UUID;
@@ -78,20 +80,22 @@ public class OutboxEventEntity {
     @Column(name = "last_error", columnDefinition = "TEXT")
     private String lastError;
 
-    // TODO: populate this from Micrometer/OpenTelemetry and forward it as a Kafka header.
+    // Reserved for distributed-tracing propagation once tracing is configured for this service.
     private String traceparent;
 
     @Column(nullable = false, name = "created_at")
+    @CreationTimestamp
     private Instant createdAt;
 
     @Column(nullable = false, name = "updated_at")
+    @UpdateTimestamp
     private Instant updatedAt;
 
     @Version
     @Column(nullable = false)
     private Long version;
 
-    public static OutboxEventEntity pending(OutboxEventRecord eventRecord, Instant now) {
+    public static OutboxEventEntity pending(OutboxEventRecord eventRecord) {
         return OutboxEventEntity.builder()
                 .id(UUID.randomUUID())
                 .eventId(eventRecord.eventId())
@@ -103,8 +107,6 @@ public class OutboxEventEntity {
                 .payload(eventRecord.payload())
                 .status(OutboxEventStatus.PENDING)
                 .attempts(0)
-                .createdAt(now)
-                .updatedAt(now)
                 .build();
     }
 
@@ -119,30 +121,30 @@ public class OutboxEventEntity {
         );
     }
 
-    public void markInProgress(Instant now) {
+    public void markInProgress(Instant lockedAt) {
         requireStatus(OutboxEventStatus.PENDING, "claim");
         status = OutboxEventStatus.IN_PROGRESS;
-        lockedAt = now;
-        updatedAt = now;
+        this.lockedAt = lockedAt;
+        updatedAt = lockedAt;
     }
 
-    public void markPublished(Instant now) {
+    public void markPublished(Instant publishedAt) {
         requireStatus(OutboxEventStatus.IN_PROGRESS, "publish");
         status = OutboxEventStatus.SENT;
         lockedAt = null;
-        publishedAt = now;
+        this.publishedAt = publishedAt;
         lastError = null;
-        updatedAt = now;
+        updatedAt = publishedAt;
     }
 
-    public void markRetryableFailure(String errorMessage, Instant nextAttemptAt, Instant now) {
+    public void markRetryableFailure(String errorMessage, Instant nextAttemptAt, Instant failureRecordedAt) {
         requireStatus(OutboxEventStatus.IN_PROGRESS, "retry");
         attempts++;
         status = OutboxEventStatus.PENDING;
         lockedAt = null;
         this.nextAttemptAt = nextAttemptAt;
         lastError = errorMessage;
-        updatedAt = now;
+        updatedAt = failureRecordedAt;
     }
 
     private void requireStatus(OutboxEventStatus expected, String operation) {
@@ -150,4 +152,5 @@ public class OutboxEventEntity {
             throw new IllegalOutboxEventStateException(id, status, operation);
         }
     }
+
 }

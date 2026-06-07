@@ -1,14 +1,16 @@
 package com.supporthub.knowledge.ticket.persistence;
 
+import com.supporthub.knowledge.ticket.domain.TicketConversationMessageProjectionInput;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
+import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
-import lombok.Setter;
+import org.hibernate.annotations.CreationTimestamp;
 
 import java.time.Instant;
 import java.util.UUID;
@@ -27,10 +29,9 @@ import java.util.UUID;
 @Entity
 @Table(name = "ticket_conversation_message")
 @Getter
-@Setter
-@Builder
-@NoArgsConstructor
-@AllArgsConstructor
+@Builder(access = AccessLevel.PRIVATE)
+@NoArgsConstructor(access = AccessLevel.PROTECTED)
+@AllArgsConstructor(access = AccessLevel.PRIVATE)
 public class TicketConversationMessageEntity {
 
     @Id
@@ -53,23 +54,17 @@ public class TicketConversationMessageEntity {
     private String message;
 
     @Column(nullable = false, name = "created_at")
+    @CreationTimestamp
     private Instant createdAt;
 
-    public static TicketConversationMessageEntity create(UUID messageId,
-                                                         UUID ticketId,
-                                                         UUID organizationId,
-                                                         UUID senderId,
-                                                         String senderType,
-                                                         String message,
-                                                         Instant now) {
+    public static TicketConversationMessageEntity from(TicketConversationMessageProjectionInput input) {
         return TicketConversationMessageEntity.builder()
-                .messageId(messageId)
-                .ticketId(ticketId)
-                .organizationId(organizationId)
-                .senderId(senderId)
-                .senderType(senderType)
-                .message(message)
-                .createdAt(now)
+                .messageId(input.getMessageId())
+                .ticketId(input.getTicketId())
+                .organizationId(input.getOrganizationId())
+                .senderId(input.getSenderId())
+                .senderType(input.getSenderType())
+                .message(input.getMessage())
                 .build();
     }
 }

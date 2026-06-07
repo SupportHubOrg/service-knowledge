@@ -1,6 +1,7 @@
 package com.supporthub.knowledge.draft.persistence;
 
 import com.supporthub.knowledge.draft.domain.DraftStatus;
+import com.supporthub.knowledge.draft.domain.PendingDraftProposal;
 import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -10,11 +11,13 @@ import jakarta.persistence.Id;
 import jakarta.persistence.OneToMany;
 import jakarta.persistence.Table;
 import jakarta.persistence.Version;
+import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
-import lombok.Setter;
+import org.hibernate.annotations.CreationTimestamp;
+import org.hibernate.annotations.UpdateTimestamp;
 
 import java.time.Instant;
 import java.util.ArrayList;
@@ -39,10 +42,9 @@ import java.util.UUID;
 @Entity
 @Table(name = "knowledge_article_drafts")
 @Getter
-@Setter
-@Builder
-@NoArgsConstructor
-@AllArgsConstructor
+@Builder(access = AccessLevel.PRIVATE)
+@NoArgsConstructor(access = AccessLevel.PROTECTED)
+@AllArgsConstructor(access = AccessLevel.PRIVATE)
 public class KnowledgeArticleDraftEntity {
 
     @Id
@@ -71,9 +73,11 @@ public class KnowledgeArticleDraftEntity {
     private String rejectionReason;
 
     @Column(nullable = false, name = "created_at")
+    @CreationTimestamp
     private Instant createdAt;
 
     @Column(nullable = false, name = "updated_at")
+    @UpdateTimestamp
     private Instant updatedAt;
 
     @Version
@@ -88,23 +92,16 @@ public class KnowledgeArticleDraftEntity {
      * Factory for a brand-new draft in {@code PENDING_GENERATION}, with its tags attached. The body
      * is filled in later by the asynchronous generation step via {@link #completeGeneration}.
      */
-    public static KnowledgeArticleDraftEntity pendingGeneration(UUID sourceTicketId,
-                                                               UUID organizationId,
-                                                               UUID proposerId,
-                                                               String title,
-                                                               List<UUID> tagIds,
-                                                               Instant now) {
+    public static KnowledgeArticleDraftEntity pendingGeneration(UUID draftId, PendingDraftProposal proposal) {
         var draft = KnowledgeArticleDraftEntity.builder()
-                .id(UUID.randomUUID())
-                .sourceTicketId(sourceTicketId)
-                .organizationId(organizationId)
-                .proposerId(proposerId)
-                .title(title)
+                .id(draftId)
+                .sourceTicketId(proposal.getSourceTicketId())
+                .organizationId(proposal.getOrganizationId())
+                .proposerId(proposal.getProposerId())
+                .title(proposal.getTitle())
                 .status(DraftStatus.PENDING_GENERATION)
-                .createdAt(now)
-                .updatedAt(now)
                 .build();
-        draft.replaceTags(tagIds, now);
+        draft.replaceTags(proposal.getTagIds());
         return draft;
     }
 
@@ -113,13 +110,13 @@ public class KnowledgeArticleDraftEntity {
      *
      * @throws IllegalDraftStateException if the draft is not {@code PENDING_GENERATION}
      */
-    public void completeGeneration(String content, Instant now) {
+    public void completeGeneration(String content, Instant generationCompletedAt) {
         if (status != DraftStatus.PENDING_GENERATION) {
             throw new IllegalDraftStateException(id, status, "completeGeneration");
         }
         this.content = content;
         this.status = DraftStatus.PENDING_REVIEW;
-        this.updatedAt = now;
+        this.updatedAt = generationCompletedAt;
     }
 
     /**
@@ -127,12 +124,12 @@ public class KnowledgeArticleDraftEntity {
      *
      * @throws IllegalDraftStateException if the draft is not {@code PENDING_GENERATION}
      */
-    public void failGeneration(Instant now) {
+    public void failGeneration(Instant generationFailedAt) {
         if (status != DraftStatus.PENDING_GENERATION) {
             throw new IllegalDraftStateException(id, status, "failGeneration");
         }
         this.status = DraftStatus.GENERATION_FAILED;
-        this.updatedAt = now;
+        this.updatedAt = generationFailedAt;
     }
 
     /**
@@ -140,14 +137,14 @@ public class KnowledgeArticleDraftEntity {
      *
      * @throws IllegalDraftStateException if the draft is not {@code PENDING_REVIEW}
      */
-    public void publish(String title, String content, Instant now) {
+    public void publish(String title, String content, Instant publishedAt) {
         if (status != DraftStatus.PENDING_REVIEW) {
             throw new IllegalDraftStateException(id, status, "publish");
         }
         this.title = title;
         this.content = content;
         this.status = DraftStatus.PUBLISHED;
-        this.updatedAt = now;
+        this.updatedAt = publishedAt;
     }
 
     /**
@@ -155,20 +152,21 @@ public class KnowledgeArticleDraftEntity {
      *
      * @throws IllegalDraftStateException if the draft is not {@code PENDING_REVIEW}
      */
-    public void reject(String reason, Instant now) {
+    public void reject(String reason, Instant rejectedAt) {
         if (status != DraftStatus.PENDING_REVIEW) {
             throw new IllegalDraftStateException(id, status, "reject");
         }
         this.status = DraftStatus.REJECTED;
         this.rejectionReason = reason;
-        this.updatedAt = now;
+        this.updatedAt = rejectedAt;
     }
 
-    private void replaceTags(List<UUID> tagIds, Instant now) {
+    private void replaceTags(List<UUID> tagIds) {
         tags.clear();
         tagIds.stream()
                 .distinct()
-                .map(tagId -> KnowledgeArticleTagEntity.forDraft(this, tagId, now))
+                .map(tagId -> KnowledgeArticleTagEntity.forDraft(this, tagId))
                 .forEach(tags::add);
     }
+
 }

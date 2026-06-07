@@ -124,7 +124,8 @@ class OutboxOrderingIntegrationTest extends KnowledgeIntegrationTestSupport {
      */
     private void drainUntilEmpty() {
         for (int i = 0; i < 10 && unfinishedCount() > 0; i++) {
-            jdbcTemplate.update("update outbox_events set next_attempt_at = null where status = 'PENDING'");
+            jdbcTemplate.update("update outbox_events set next_attempt_at = null where topic = ? and status = 'PENDING'",
+                    TOPIC);
             publisher.publishPendingEvents();
         }
         assertThat(unfinishedCount()).isZero();
@@ -132,14 +133,16 @@ class OutboxOrderingIntegrationTest extends KnowledgeIntegrationTestSupport {
 
     private long unfinishedCount() {
         return jdbcTemplate.queryForObject(
-                "select count(*) from outbox_events where status in ('PENDING','IN_PROGRESS')",
-                Long.class);
+                "select count(*) from outbox_events where topic = ? and status in ('PENDING','IN_PROGRESS')",
+                Long.class,
+                TOPIC);
     }
 
     private long statusCount(OutboxEventStatus status) {
         return jdbcTemplate.queryForObject(
-                "select count(*) from outbox_events where status = ?",
+                "select count(*) from outbox_events where topic = ? and status = ?",
                 Long.class,
+                TOPIC,
                 status.name());
     }
 
@@ -191,6 +194,10 @@ class OutboxOrderingIntegrationTest extends KnowledgeIntegrationTestSupport {
 
         @Override
         public CompletableFuture<OutboxSendResult> send(OutboxEventRecord event) {
+            if (!TOPIC.equals(event.route().topic())) {
+                return CompletableFuture.completedFuture(
+                        new OutboxSendResult(event.route().topic(), 0, -1));
+            }
             var counter = remainingFailures.get(event.eventId());
             if (counter != null && counter.getAndDecrement() > 0) {
                 return CompletableFuture.failedFuture(new OutboxPublishingException(

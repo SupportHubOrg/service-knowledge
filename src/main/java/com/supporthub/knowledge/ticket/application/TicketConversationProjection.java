@@ -8,7 +8,6 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.time.Clock;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -24,7 +23,7 @@ import java.util.UUID;
 public class TicketConversationProjection {
 
     private final TicketConversationMessageRepository repository;
-    private final Clock clock;
+    private final TicketConversationMapper mapper;
 
     /** Idempotently records a conversation message; redelivered messages (same id) are skipped. */
     @Transactional
@@ -34,15 +33,8 @@ public class TicketConversationProjection {
                     payload.messageId(), payload.ticketId());
             return;
         }
-        repository.save(TicketConversationMessageEntity.create(
-                payload.messageId(),
-                payload.ticketId(),
-                payload.organizationId(),
-                payload.senderId(),
-                payload.senderType(),
-                payload.message(),
-                clock.instant()
-        ));
+        var input = mapper.toProjectionInput(payload);
+        repository.save(TicketConversationMessageEntity.from(input));
     }
 
     /** Resolves the organization of a ticket from its projected messages, if any are known. */

@@ -6,8 +6,6 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.time.Clock;
-
 /**
  * Write-side outbox entry point used inside business transactions.
  *
@@ -21,13 +19,12 @@ public class OutboxEventWriter {
     private final OutboxEventEnvelopeFactory envelopeFactory;
     private final OutboxEventSerializer serializer;
     private final OutboxEventRepository repository;
-    private final Clock clock;
 
     @Transactional
     public void append(String messageKey, Object payload) {
         var event = envelopeFactory.create(payload);
         var route = routeResolver.resolve(messageKey, event);
         var serializedEvent = serializer.serialize(event, route);
-        repository.save(OutboxEventEntity.pending(serializedEvent, clock.instant()));
+        repository.save(OutboxEventEntity.pending(serializedEvent));
     }
 }

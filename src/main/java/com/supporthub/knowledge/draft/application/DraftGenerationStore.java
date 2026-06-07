@@ -50,7 +50,8 @@ public class DraftGenerationStore {
         draftRepository.findWithTagsById(draftId)
                 .filter(draft -> draft.getStatus() == DraftStatus.PENDING_GENERATION)
                 .ifPresent(draft -> {
-                    draft.completeGeneration(content, clock.instant());
+                    var generationCompletedAt = clock.instant();
+                    draft.completeGeneration(content, generationCompletedAt);
                     eventPublisher.publishKnowledgeArticleDraftSaved(draft);
                 });
     }
@@ -60,7 +61,8 @@ public class DraftGenerationStore {
         draftRepository.findById(draftId)
                 .filter(draft -> draft.getStatus() == DraftStatus.PENDING_GENERATION)
                 .ifPresent(draft -> {
-                    draft.failGeneration(clock.instant());
+                    var generationFailedAt = clock.instant();
+                    draft.failGeneration(generationFailedAt);
                     eventPublisher.publishKnowledgeArticleDraftSaveFailed(
                             draft.getSourceTicketId(),
                             draft.getOrganizationId(),

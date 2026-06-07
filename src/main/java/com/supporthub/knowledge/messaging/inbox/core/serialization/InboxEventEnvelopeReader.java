@@ -43,8 +43,6 @@ public class InboxEventEnvelopeReader {
             );
         } catch (JacksonException exception) {
             throw new InboxMessageFormatException("Malformed Kafka event JSON", exception);
-        } catch (IllegalArgumentException exception) {
-            throw new InboxMessageFormatException("Malformed Kafka event metadata", exception);
         }
     }
 
@@ -57,17 +55,25 @@ public class InboxEventEnvelopeReader {
     }
 
     private UUID uuid(JsonNode metadata, String fieldName) {
-        return UUID.fromString(requiredText(metadata, fieldName));
+        try {
+            return UUID.fromString(requiredText(metadata, fieldName));
+        } catch (IllegalArgumentException exception) {
+            throw new InboxMessageFormatException(fieldName + " must be a valid UUID", exception);
+        }
     }
 
     private Instant instant(JsonNode metadata, String fieldName) {
-        return Instant.parse(requiredText(metadata, fieldName));
+        try {
+            return Instant.parse(requiredText(metadata, fieldName));
+        } catch (RuntimeException exception) {
+            throw new InboxMessageFormatException(fieldName + " must be a valid timestamp", exception);
+        }
     }
 
     private int requiredInt(JsonNode metadata, String fieldName) {
         var value = metadata.path(fieldName);
         if (!value.isNumber()) {
-            throw new IllegalArgumentException(fieldName + " is required");
+            throw new InboxMessageFormatException(fieldName + " is required");
         }
         return value.intValue();
     }
@@ -75,7 +81,7 @@ public class InboxEventEnvelopeReader {
     private String requiredText(JsonNode metadata, String fieldName) {
         var value = optionalText(metadata, fieldName);
         if (value == null || value.isBlank()) {
-            throw new IllegalArgumentException(fieldName + " is required");
+            throw new InboxMessageFormatException(fieldName + " is required");
         }
         return value;
     }

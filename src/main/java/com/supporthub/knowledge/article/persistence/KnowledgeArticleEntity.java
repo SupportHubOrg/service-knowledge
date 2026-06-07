@@ -15,11 +15,13 @@ import jakarta.persistence.OneToMany;
 import jakarta.persistence.OneToOne;
 import jakarta.persistence.Table;
 import jakarta.persistence.Version;
+import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
-import lombok.Setter;
+import org.hibernate.annotations.CreationTimestamp;
+import org.hibernate.annotations.UpdateTimestamp;
 
 import java.time.Instant;
 import java.util.ArrayList;
@@ -27,7 +29,7 @@ import java.util.List;
 import java.util.UUID;
 
 /**
- * A published knowledge article — the immutable, read-only result of accepting a draft.
+ * A published knowledge article - the immutable, read-only result of accepting a draft.
  *
  * <p>Always created from a {@link KnowledgeArticleDraftEntity} via {@link #publishFromDraft}, never
  * directly. Keeps a back-reference to its originating draft and a snapshot copy of the draft's
@@ -37,10 +39,9 @@ import java.util.UUID;
 @Entity
 @Table(name = "knowledge_articles")
 @Getter
-@Setter
-@Builder
-@NoArgsConstructor
-@AllArgsConstructor
+@Builder(access = AccessLevel.PRIVATE)
+@NoArgsConstructor(access = AccessLevel.PROTECTED)
+@AllArgsConstructor(access = AccessLevel.PRIVATE)
 public class KnowledgeArticleEntity {
 
     @Id
@@ -73,9 +74,11 @@ public class KnowledgeArticleEntity {
     private Instant publishedAt;
 
     @Column(nullable = false, name = "created_at")
+    @CreationTimestamp
     private Instant createdAt;
 
     @Column(nullable = false, name = "updated_at")
+    @UpdateTimestamp
     private Instant updatedAt;
 
     @Version
@@ -93,7 +96,7 @@ public class KnowledgeArticleEntity {
      */
     public static KnowledgeArticleEntity publishFromDraft(KnowledgeArticleDraftEntity draft,
                                                           UUID publishedById,
-                                                          Instant now) {
+                                                          Instant publishedAt) {
         var article = KnowledgeArticleEntity.builder()
                 .id(UUID.randomUUID())
                 .draft(draft)
@@ -103,22 +106,21 @@ public class KnowledgeArticleEntity {
                 .content(draft.getContent())
                 .status(ArticleStatus.PUBLISHED)
                 .publishedById(publishedById)
-                .publishedAt(now)
-                .createdAt(now)
-                .updatedAt(now)
+                .publishedAt(publishedAt)
                 .build();
         draft.getTags().stream()
-                .map(tag -> KnowledgeArticleTagEntity.forArticle(article, tag.getTagId(), now))
+                .map(tag -> KnowledgeArticleTagEntity.forArticle(article, tag.getTagId()))
                 .forEach(article.tags::add);
         return article;
     }
 
     /** Archives the article (e.g. its ticket or organization was deleted). Idempotent. */
-    public void archive(Instant now) {
+    public void archive(Instant archivedAt) {
         if (status == ArticleStatus.ARCHIVED) {
             return;
         }
         this.status = ArticleStatus.ARCHIVED;
-        this.updatedAt = now;
+        this.updatedAt = archivedAt;
     }
+
 }

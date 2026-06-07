@@ -10,6 +10,7 @@ import com.supporthub.knowledge.messaging.inbox.core.handler.InboxHandlerRegistr
 import com.supporthub.knowledge.messaging.inbox.core.model.InboxEventEnvelope;
 import com.supporthub.knowledge.messaging.inbox.core.persistence.InboxEventStore;
 import com.supporthub.knowledge.messaging.inbox.core.serialization.InboxEventEnvelopeReader;
+import com.supporthub.knowledge.shared.error.BusinessValidationException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
@@ -58,7 +59,7 @@ public class InboxMessageProcessor {
                     context.topic(),
                     context.partition(),
                     context.offset());
-        } catch (InboxMessageFormatException | InboxHandlerNotFoundException exception) {
+        } catch (InboxMessageFormatException | InboxHandlerNotFoundException | BusinessValidationException exception) {
             throw new NonRetryableKafkaProcessingException("Non-retryable inbox event " + eventType, exception);
         } catch (NonRetryableKafkaProcessingException | RetryableKafkaProcessingException exception) {
             throw exception;

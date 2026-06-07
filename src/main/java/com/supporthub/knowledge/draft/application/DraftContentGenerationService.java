@@ -16,7 +16,7 @@ import java.util.UUID;
  * Phase 2 of article creation: turns {@code PENDING_GENERATION} drafts into reviewable ones by
  * generating their body from the ticket conversation.
  *
- * <p>Orchestration only — it reads the draft snapshot and conversation through transactional
+ * <p>Orchestration only - it reads the draft snapshot and conversation through transactional
  * collaborators, calls the {@link ArticleDraftContentGenerator} <b>outside any transaction</b> (it
  * is an external integration that may do network I/O), then persists the outcome in a short
  * transaction via {@link DraftGenerationStore}.

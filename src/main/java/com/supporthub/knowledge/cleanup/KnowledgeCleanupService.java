@@ -30,8 +30,8 @@ public class KnowledgeCleanupService {
 
     @Transactional
     public void onTicketDeleted(UUID ticketId) {
-        var now = clock.instant();
-        articleRepository.findBySourceTicketId(ticketId).ifPresent(article -> article.archive(now));
+        var archivedAt = clock.instant();
+        articleRepository.findBySourceTicketId(ticketId).ifPresent(article -> article.archive(archivedAt));
         draftRepository.findWithTagsBySourceTicketId(ticketId)
                 .filter(KnowledgeCleanupService::isDeletable)
                 .ifPresent(draftRepository::delete);
@@ -40,10 +40,10 @@ public class KnowledgeCleanupService {
 
     @Transactional
     public void onOrganizationDeleted(UUID organizationId) {
-        var now = clock.instant();
+        var archivedAt = clock.instant();
         articleRepository.findByOrganizationIdAndStatusOrderByPublishedAtDesc(
                         organizationId, com.supporthub.knowledge.article.domain.ArticleStatus.PUBLISHED)
-                .forEach(article -> article.archive(now));
+                .forEach(article -> article.archive(archivedAt));
         var deletableDrafts = draftRepository.findByOrganizationIdOrderByCreatedAtDesc(organizationId).stream()
                 .filter(KnowledgeCleanupService::isDeletable)
                 .toList();

@@ -28,15 +28,16 @@ public class OutboxEventStore {
 
     @Transactional
     public List<OutboxEventEntity> claimNextBatch() {
-        var now = clock.instant();
-        var events = repository.lockPendingForPublishing(now, properties.batchSize());
-        events.forEach(event -> event.markInProgress(now));
+        var lockedAt = clock.instant();
+        var events = repository.lockPendingForPublishing(lockedAt, properties.batchSize());
+        events.forEach(event -> event.markInProgress(lockedAt));
         return events;
     }
 
     @Transactional
     public void markPublished(UUID eventId) {
-        repository.getReferenceById(eventId).markPublished(clock.instant());
+        var publishedAt = clock.instant();
+        repository.getReferenceById(eventId).markPublished(publishedAt);
     }
 
     /**
@@ -48,8 +49,9 @@ public class OutboxEventStore {
     @Transactional
     public void scheduleRetry(UUID eventId, Throwable failure) {
         var event = repository.getReferenceById(eventId);
-        var now = clock.instant();
-        event.markRetryableFailure(errorMessage(failure), now.plus(backoffFor(event.getAttempts())), now);
+        var failureRecordedAt = clock.instant();
+        var nextAttemptAt = failureRecordedAt.plus(backoffFor(event.getAttempts()));
+        event.markRetryableFailure(errorMessage(failure), nextAttemptAt, failureRecordedAt);
     }
 
     private Duration backoffFor(int attempts) {
@@ -65,8 +67,8 @@ public class OutboxEventStore {
 
     @Transactional
     public int requeueStuckEvents() {
-        var now = clock.instant();
-        return repository.recoverStuckEvents(now.minus(properties.stuckTimeout()), now);
+        var recoveredAt = clock.instant();
+        return repository.recoverStuckEvents(recoveredAt.minus(properties.stuckTimeout()), recoveredAt);
     }
 
     private String errorMessage(Throwable failure) {

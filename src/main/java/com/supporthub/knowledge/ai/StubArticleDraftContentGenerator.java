@@ -8,8 +8,7 @@ import java.util.stream.Collectors;
  * Placeholder generator that deterministically assembles a draft body from the ticket conversation,
  * so the end-to-end business process works and is testable before the real model is wired.
  *
- * <p>TODO: replace with an Anthropic-backed adapter that summarizes the conversation into a proper
- * article. Keep this class as a fallback/test double.
+ * <p>Keep this class as a local fallback/test double when no LLM-backed adapter is configured.
  */
 @Component
 public class StubArticleDraftContentGenerator implements ArticleDraftContentGenerator {

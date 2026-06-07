@@ -26,8 +26,13 @@ public class GlobalExceptionHandler {
         return error(HttpStatus.FORBIDDEN, exception.getMessage(), request);
     }
 
-    @ExceptionHandler({BusinessValidationException.class, IllegalDraftStateException.class})
-    ResponseEntity<ApiErrorResponse> badRequest(RuntimeException exception, HttpServletRequest request) {
+    @ExceptionHandler(BusinessValidationException.class)
+    ResponseEntity<ApiErrorResponse> badRequest(BusinessValidationException exception, HttpServletRequest request) {
+        return error(HttpStatus.BAD_REQUEST, exception.getMessage(), request);
+    }
+
+    @ExceptionHandler(IllegalDraftStateException.class)
+    ResponseEntity<ApiErrorResponse> illegalDraftState(IllegalDraftStateException exception, HttpServletRequest request) {
         return error(HttpStatus.BAD_REQUEST, exception.getMessage(), request);
     }
 

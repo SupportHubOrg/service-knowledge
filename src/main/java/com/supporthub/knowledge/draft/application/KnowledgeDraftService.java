@@ -47,6 +47,7 @@ public class KnowledgeDraftService {
     private final KnowledgeArticleDraftRepository draftRepository;
     private final KnowledgeArticleRepository articleRepository;
     private final KnowledgeMapper mapper;
+    private final KnowledgeArticleDraftFactory draftFactory;
     private final KnowledgeAccessPolicy accessPolicy;
     private final KnowledgeEventPublisher eventPublisher;
     private final TicketConversationProjection ticketConversationProjection;
@@ -81,14 +82,8 @@ public class KnowledgeDraftService {
             return;
         }
 
-        var draft = KnowledgeArticleDraftEntity.pendingGeneration(
-                payload.ticketId(),
-                organizationId,
-                payload.proposerId(),
-                payload.proposedSubject(),
-                payload.tags(),
-                clock.instant()
-        );
+        var proposal = mapper.toPendingDraftProposal(payload, organizationId);
+        var draft = draftFactory.createPendingGeneration(proposal);
         draftRepository.save(draft);
     }
 
@@ -133,9 +128,9 @@ public class KnowledgeDraftService {
         var title = request.title() == null || request.title().isBlank() ? draft.getTitle() : request.title().trim();
         var content = resolvePublicationContent(request, draft);
 
-        var now = clock.instant();
-        draft.publish(title, content, now);
-        var article = KnowledgeArticleEntity.publishFromDraft(draft, user.userId(), now);
+        var publishedAt = clock.instant();
+        draft.publish(title, content, publishedAt);
+        var article = KnowledgeArticleEntity.publishFromDraft(draft, user.userId(), publishedAt);
         articleRepository.save(article);
         eventPublisher.publishKnowledgeArticlePublished(article);
         return mapper.toArticleResponse(article);
@@ -150,7 +145,8 @@ public class KnowledgeDraftService {
         var draft = draftRepository.findWithTagsById(draftId)
                 .orElseThrow(() -> new ResourceNotFoundException(KNOWLEDGE_DRAFT_RESOURCE, draftId));
         accessPolicy.requireDraftManagement(user, draft.getOrganizationId());
-        draft.reject(request.rejectionReason().trim(), clock.instant());
+        var rejectedAt = clock.instant();
+        draft.reject(request.rejectionReason().trim(), rejectedAt);
         eventPublisher.publishKnowledgeArticleRejected(draft, user.userId());
         return mapper.toDraftResponse(draft);
     }

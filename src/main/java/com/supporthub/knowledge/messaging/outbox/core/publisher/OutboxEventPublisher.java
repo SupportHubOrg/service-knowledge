@@ -71,7 +71,6 @@ public class OutboxEventPublisher {
             // Do not cancel: cancelling does not stop the in-flight Kafka send (and could reorder a
             // late-arriving record). With batch-send-timeout >= delivery.timeout.ms the future
             // normally resolves on its own; anything truly hung is reclaimed by requeueStuckEvents.
-            // TODO: export a stuck-IN_PROGRESS metric.
             log.warn("Outbox send not complete within batch timeout; leaving IN_PROGRESS. eventType={}, eventId={}, timeout={}",
                     event.getEventType(),
                     event.getEventId(),
@@ -98,7 +97,7 @@ public class OutboxEventPublisher {
     private void markFailure(OutboxEventEntity event, OutboxPublishingException exception) {
         // No error classification: a failed send means the broker is unreachable (the producer
         // already retried transient errors internally), so we always back off and retry. There is
-        // no terminal FAILED state. TODO: export a stuck-PENDING age/count metric for visibility.
+        // no terminal FAILED state.
         eventStore.scheduleRetry(event.getId(), exception);
         log.warn("Outbox event publication failed; scheduled retry. eventType={}, eventId={}, attempts={}, errorType={}, errorMessage={}",
                 event.getEventType(),
