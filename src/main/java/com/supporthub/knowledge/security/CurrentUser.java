@@ -1,5 +1,7 @@
 package com.supporthub.knowledge.security;
 
+import com.supporthub.knowledge.shared.identity.OrganizationId;
+
 import java.util.Set;
 import java.util.UUID;
 
@@ -25,7 +27,7 @@ public record CurrentUser(
     }
 
     /** True when this user is scoped to the given organization. */
-    public boolean belongsTo(UUID organizationId) {
-        return this.organizationId != null && this.organizationId.equals(organizationId);
+    public boolean belongsTo(OrganizationId organizationId) {
+        return this.organizationId != null && OrganizationId.of(this.organizationId).sameAs(organizationId);
     }
 }

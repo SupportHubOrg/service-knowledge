@@ -1,43 +1,40 @@
 package com.supporthub.knowledge.draft.domain;
 
+import com.supporthub.knowledge.shared.content.ArticleTitle;
 import com.supporthub.knowledge.shared.error.BusinessValidationException;
+import com.supporthub.knowledge.shared.identity.OrganizationId;
+import com.supporthub.knowledge.shared.identity.TagId;
+import com.supporthub.knowledge.shared.identity.TicketId;
+import com.supporthub.knowledge.shared.identity.UserId;
 import lombok.Builder;
 import lombok.Getter;
 
 import java.util.List;
 import java.util.Objects;
-import java.util.UUID;
 
 @Getter
 public final class PendingDraftProposal {
 
-    private final UUID sourceTicketId;
-    private final UUID organizationId;
-    private final UUID proposerId;
-    private final String title;
-    private final List<UUID> tagIds;
+    private final TicketId sourceTicketId;
+    private final OrganizationId organizationId;
+    private final UserId proposerId;
+    private final ArticleTitle title;
+    private final List<TagId> tagIds;
 
     @Builder
-    private PendingDraftProposal(UUID sourceTicketId,
-                                 UUID organizationId,
-                                 UUID proposerId,
-                                 String title,
-                                 List<UUID> tagIds) {
+    private PendingDraftProposal(TicketId sourceTicketId,
+                                 OrganizationId organizationId,
+                                 UserId proposerId,
+                                 ArticleTitle title,
+                                 List<TagId> tagIds) {
         this.sourceTicketId = require(sourceTicketId, "sourceTicketId");
         this.organizationId = require(organizationId, "organizationId");
         this.proposerId = require(proposerId, "proposerId");
-        this.title = requireTitle(title);
+        this.title = require(title, "title");
         this.tagIds = copyTagIds(tagIds);
     }
 
-    private static String requireTitle(String title) {
-        if (title == null || title.isBlank()) {
-            throw new BusinessValidationException("Draft proposal title must not be blank");
-        }
-        return title.trim();
-    }
-
-    private static List<UUID> copyTagIds(List<UUID> tagIds) {
+    private static List<TagId> copyTagIds(List<TagId> tagIds) {
         require(tagIds, "tagIds");
         if (tagIds.stream().anyMatch(Objects::isNull)) {
             throw new BusinessValidationException("Draft proposal tag ids must not contain null values");

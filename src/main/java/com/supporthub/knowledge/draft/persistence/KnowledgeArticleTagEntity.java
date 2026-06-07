@@ -1,6 +1,7 @@
 package com.supporthub.knowledge.draft.persistence;
 
 import com.supporthub.knowledge.article.persistence.KnowledgeArticleEntity;
+import com.supporthub.knowledge.shared.identity.TagId;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.FetchType;
@@ -38,13 +39,13 @@ public class KnowledgeArticleTagEntity {
     private KnowledgeArticleEntity article;
 
     @Column(nullable = false, name = "tag_id")
-    private UUID tagId;
+    private TagId tagId;
 
     @Column(nullable = false, name = "created_at")
     @CreationTimestamp
     private Instant createdAt;
 
-    public static KnowledgeArticleTagEntity forDraft(KnowledgeArticleDraftEntity draft, UUID tagId) {
+    public static KnowledgeArticleTagEntity forDraft(KnowledgeArticleDraftEntity draft, TagId tagId) {
         return KnowledgeArticleTagEntity.builder()
                 .id(UUID.randomUUID())
                 .draft(draft)
@@ -52,7 +53,7 @@ public class KnowledgeArticleTagEntity {
                 .build();
     }
 
-    public static KnowledgeArticleTagEntity forArticle(KnowledgeArticleEntity article, UUID tagId) {
+    public static KnowledgeArticleTagEntity forArticle(KnowledgeArticleEntity article, TagId tagId) {
         return KnowledgeArticleTagEntity.builder()
                 .id(UUID.randomUUID())
                 .article(article)

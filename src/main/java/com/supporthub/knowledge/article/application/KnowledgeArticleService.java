@@ -4,9 +4,11 @@ import com.supporthub.knowledge.article.api.ArticleResponse;
 import com.supporthub.knowledge.article.domain.ArticleStatus;
 import com.supporthub.knowledge.article.persistence.KnowledgeArticleRepository;
 import com.supporthub.knowledge.draft.application.KnowledgeMapper;
+import com.supporthub.knowledge.article.domain.ArticleId;
 import com.supporthub.knowledge.security.CurrentUser;
 import com.supporthub.knowledge.security.KnowledgeAccessPolicy;
 import com.supporthub.knowledge.shared.error.ResourceNotFoundException;
+import com.supporthub.knowledge.shared.identity.OrganizationId;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -31,7 +33,7 @@ public class KnowledgeArticleService {
                     .toList();
         }
         return articleRepository.findByOrganizationIdAndStatusOrderByPublishedAtDesc(
-                        user.organizationId(),
+                        OrganizationId.of(user.organizationId()),
                         ArticleStatus.PUBLISHED
                 ).stream()
                 .map(mapper::toArticleResponse)
@@ -50,7 +52,7 @@ public class KnowledgeArticleService {
 
     @Transactional(readOnly = true)
     public ArticleResponse getPublishedArticle(CurrentUser user, UUID articleId) {
-        var article = articleRepository.findWithTagsById(articleId)
+        var article = articleRepository.findWithTagsById(ArticleId.of(articleId))
                 .orElseThrow(() -> new ResourceNotFoundException("Knowledge article", articleId));
         accessPolicy.requireArticleRead(user, article.getOrganizationId());
         return mapper.toArticleResponse(article);

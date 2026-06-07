@@ -1,13 +1,21 @@
 package com.supporthub.knowledge.draft.persistence;
 
+import com.supporthub.knowledge.draft.domain.DraftId;
 import com.supporthub.knowledge.draft.domain.DraftStatus;
 import com.supporthub.knowledge.draft.domain.PendingDraftProposal;
+import com.supporthub.knowledge.draft.domain.RejectionReason;
+import com.supporthub.knowledge.shared.content.ArticleContent;
+import com.supporthub.knowledge.shared.content.ArticleTitle;
+import com.supporthub.knowledge.shared.identity.OrganizationId;
+import com.supporthub.knowledge.shared.identity.TagId;
+import com.supporthub.knowledge.shared.identity.TicketId;
+import com.supporthub.knowledge.shared.identity.UserId;
 import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
+import jakarta.persistence.EmbeddedId;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
-import jakarta.persistence.Id;
 import jakarta.persistence.OneToMany;
 import jakarta.persistence.Table;
 import jakarta.persistence.Version;
@@ -22,7 +30,6 @@ import org.hibernate.annotations.UpdateTimestamp;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.UUID;
 
 /**
  * Aggregate root for a proposed knowledge article awaiting review.
@@ -47,30 +54,30 @@ import java.util.UUID;
 @AllArgsConstructor(access = AccessLevel.PRIVATE)
 public class KnowledgeArticleDraftEntity {
 
-    @Id
-    private UUID id;
+    @EmbeddedId
+    private DraftId id;
 
     @Column(nullable = false, name = "source_ticket_id")
-    private UUID sourceTicketId;
+    private TicketId sourceTicketId;
 
     @Column(nullable = false, name = "organization_id")
-    private UUID organizationId;
+    private OrganizationId organizationId;
 
     @Column(nullable = false, name = "proposer_id")
-    private UUID proposerId;
+    private UserId proposerId;
 
     @Column(nullable = false)
-    private String title;
+    private ArticleTitle title;
 
     @Column(columnDefinition = "TEXT")
-    private String content;
+    private ArticleContent content;
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
     private DraftStatus status;
 
     @Column(name = "rejection_reason", columnDefinition = "TEXT")
-    private String rejectionReason;
+    private RejectionReason rejectionReason;
 
     @Column(nullable = false, name = "created_at")
     @CreationTimestamp
@@ -92,7 +99,7 @@ public class KnowledgeArticleDraftEntity {
      * Factory for a brand-new draft in {@code PENDING_GENERATION}, with its tags attached. The body
      * is filled in later by the asynchronous generation step via {@link #completeGeneration}.
      */
-    public static KnowledgeArticleDraftEntity pendingGeneration(UUID draftId, PendingDraftProposal proposal) {
+    public static KnowledgeArticleDraftEntity pendingGeneration(DraftId draftId, PendingDraftProposal proposal) {
         var draft = KnowledgeArticleDraftEntity.builder()
                 .id(draftId)
                 .sourceTicketId(proposal.getSourceTicketId())
@@ -110,7 +117,7 @@ public class KnowledgeArticleDraftEntity {
      *
      * @throws IllegalDraftStateException if the draft is not {@code PENDING_GENERATION}
      */
-    public void completeGeneration(String content, Instant generationCompletedAt) {
+    public void completeGeneration(ArticleContent content, Instant generationCompletedAt) {
         if (status != DraftStatus.PENDING_GENERATION) {
             throw new IllegalDraftStateException(id, status, "completeGeneration");
         }
@@ -137,7 +144,7 @@ public class KnowledgeArticleDraftEntity {
      *
      * @throws IllegalDraftStateException if the draft is not {@code PENDING_REVIEW}
      */
-    public void publish(String title, String content, Instant publishedAt) {
+    public void publish(ArticleTitle title, ArticleContent content, Instant publishedAt) {
         if (status != DraftStatus.PENDING_REVIEW) {
             throw new IllegalDraftStateException(id, status, "publish");
         }
@@ -152,7 +159,7 @@ public class KnowledgeArticleDraftEntity {
      *
      * @throws IllegalDraftStateException if the draft is not {@code PENDING_REVIEW}
      */
-    public void reject(String reason, Instant rejectedAt) {
+    public void reject(RejectionReason reason, Instant rejectedAt) {
         if (status != DraftStatus.PENDING_REVIEW) {
             throw new IllegalDraftStateException(id, status, "reject");
         }
@@ -161,7 +168,7 @@ public class KnowledgeArticleDraftEntity {
         this.updatedAt = rejectedAt;
     }
 
-    private void replaceTags(List<UUID> tagIds) {
+    private void replaceTags(List<TagId> tagIds) {
         tags.clear();
         tagIds.stream()
                 .distinct()

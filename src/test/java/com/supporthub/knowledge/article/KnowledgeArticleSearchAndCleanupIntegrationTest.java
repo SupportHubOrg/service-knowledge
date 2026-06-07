@@ -5,8 +5,10 @@ import com.supporthub.knowledge.cleanup.KnowledgeCleanupService;
 import com.supporthub.knowledge.draft.api.PublishDraftRequest;
 import com.supporthub.knowledge.draft.application.DraftContentGenerationService;
 import com.supporthub.knowledge.draft.application.KnowledgeDraftService;
+import com.supporthub.knowledge.draft.domain.DraftIds;
 import com.supporthub.knowledge.draft.persistence.KnowledgeArticleDraftRepository;
 import com.supporthub.knowledge.messaging.event.KnowledgeArticleProposedPayload;
+import com.supporthub.knowledge.shared.identity.TicketId;
 import com.supporthub.knowledge.messaging.event.TicketMessageAddedPayload;
 import com.supporthub.knowledge.security.CurrentUser;
 import com.supporthub.knowledge.security.SupportHubRole;
@@ -81,11 +83,11 @@ class KnowledgeArticleSearchAndCleanupIntegrationTest extends KnowledgeIntegrati
         var organizationId = UUID.randomUUID();
         var ticketId = UUID.randomUUID();
         createPendingReviewDraft(ticketId, organizationId);
-        assertThat(draftRepository.findWithTagsBySourceTicketId(ticketId)).isPresent();
+        assertThat(draftRepository.findWithTagsBySourceTicketId(TicketId.of(ticketId))).isPresent();
 
         cleanupService.onTicketDeleted(ticketId);
 
-        assertThat(draftRepository.findWithTagsBySourceTicketId(ticketId)).isEmpty();
+        assertThat(draftRepository.findWithTagsBySourceTicketId(TicketId.of(ticketId))).isEmpty();
         assertThat(ticketConversationProjection.conversation(ticketId)).isEmpty();
     }
 
@@ -147,7 +149,8 @@ class KnowledgeArticleSearchAndCleanupIntegrationTest extends KnowledgeIntegrati
                 List.of(UUID.randomUUID())
         ));
         generationService.generatePendingDrafts();
-        var draftId = draftRepository.findWithTagsBySourceTicketId(ticketId).orElseThrow().getId();
+        var draftId = DraftIds.toRaw(
+                draftRepository.findWithTagsBySourceTicketId(TicketId.of(ticketId)).orElseThrow().getId());
         var publisher = new CurrentUser(UUID.randomUUID(), organizationId, Set.of(SupportHubRole.ORGANIZATION_MANAGER));
         draftService.publishDraft(publisher, draftId, new PublishDraftRequest(subject, content));
     }

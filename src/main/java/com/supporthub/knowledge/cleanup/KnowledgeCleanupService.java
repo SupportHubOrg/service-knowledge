@@ -4,6 +4,8 @@ import com.supporthub.knowledge.article.persistence.KnowledgeArticleRepository;
 import com.supporthub.knowledge.draft.domain.DraftStatus;
 import com.supporthub.knowledge.draft.persistence.KnowledgeArticleDraftEntity;
 import com.supporthub.knowledge.draft.persistence.KnowledgeArticleDraftRepository;
+import com.supporthub.knowledge.shared.identity.OrganizationId;
+import com.supporthub.knowledge.shared.identity.TicketId;
 import com.supporthub.knowledge.ticket.application.TicketConversationProjection;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -31,8 +33,9 @@ public class KnowledgeCleanupService {
     @Transactional
     public void onTicketDeleted(UUID ticketId) {
         var archivedAt = clock.instant();
-        articleRepository.findBySourceTicketId(ticketId).ifPresent(article -> article.archive(archivedAt));
-        draftRepository.findWithTagsBySourceTicketId(ticketId)
+        var sourceTicketId = TicketId.of(ticketId);
+        articleRepository.findBySourceTicketId(sourceTicketId).ifPresent(article -> article.archive(archivedAt));
+        draftRepository.findWithTagsBySourceTicketId(sourceTicketId)
                 .filter(KnowledgeCleanupService::isDeletable)
                 .ifPresent(draftRepository::delete);
         ticketConversationProjection.deleteByTicket(ticketId);
@@ -41,10 +44,11 @@ public class KnowledgeCleanupService {
     @Transactional
     public void onOrganizationDeleted(UUID organizationId) {
         var archivedAt = clock.instant();
+        var orgId = OrganizationId.of(organizationId);
         articleRepository.findByOrganizationIdAndStatusOrderByPublishedAtDesc(
-                        organizationId, com.supporthub.knowledge.article.domain.ArticleStatus.PUBLISHED)
+                        orgId, com.supporthub.knowledge.article.domain.ArticleStatus.PUBLISHED)
                 .forEach(article -> article.archive(archivedAt));
-        var deletableDrafts = draftRepository.findByOrganizationIdOrderByCreatedAtDesc(organizationId).stream()
+        var deletableDrafts = draftRepository.findByOrganizationIdOrderByCreatedAtDesc(orgId).stream()
                 .filter(KnowledgeCleanupService::isDeletable)
                 .toList();
         draftRepository.deleteAll(deletableDrafts);

@@ -6,13 +6,21 @@ import com.supporthub.knowledge.article.persistence.KnowledgeArticleRepository;
 import com.supporthub.knowledge.draft.api.DraftResponse;
 import com.supporthub.knowledge.draft.api.PublishDraftRequest;
 import com.supporthub.knowledge.draft.api.RejectDraftRequest;
+import com.supporthub.knowledge.draft.domain.DraftId;
 import com.supporthub.knowledge.draft.domain.DraftStatus;
+import com.supporthub.knowledge.draft.domain.RejectionReason;
 import com.supporthub.knowledge.draft.persistence.KnowledgeArticleDraftEntity;
 import com.supporthub.knowledge.draft.persistence.KnowledgeArticleDraftRepository;
 import com.supporthub.knowledge.messaging.KnowledgeEventPublisher;
 import com.supporthub.knowledge.messaging.event.DraftSaveFailureCode;
 import com.supporthub.knowledge.messaging.event.KnowledgeArticleProposedPayload;
 import com.supporthub.knowledge.security.CurrentUser;
+import com.supporthub.knowledge.shared.content.ArticleContent;
+import com.supporthub.knowledge.shared.content.ArticleContentConverter;
+import com.supporthub.knowledge.shared.content.ArticleTitle;
+import com.supporthub.knowledge.shared.identity.OrganizationId;
+import com.supporthub.knowledge.shared.identity.TicketId;
+import com.supporthub.knowledge.shared.identity.UserId;
 import com.supporthub.knowledge.ticket.application.TicketConversationProjection;
 import com.supporthub.knowledge.security.KnowledgeAccessPolicy;
 import com.supporthub.knowledge.shared.error.BusinessValidationException;
@@ -67,7 +75,7 @@ public class KnowledgeDraftService {
      */
     @Transactional
     public void createDraftFromTicketProposal(KnowledgeArticleProposedPayload payload) {
-        if (draftRepository.findWithTagsBySourceTicketId(payload.ticketId()).isPresent()) {
+        if (draftRepository.findWithTagsBySourceTicketId(TicketId.of(payload.ticketId())).isPresent()) {
             return;
         }
 
@@ -96,16 +104,17 @@ public class KnowledgeDraftService {
                     ? draftRepository.findAllByOrderByCreatedAtDesc()
                     : draftRepository.findByStatusOrderByCreatedAtDesc(status);
         } else {
+            var organizationId = OrganizationId.of(user.organizationId());
             drafts = status == null
-                    ? draftRepository.findByOrganizationIdOrderByCreatedAtDesc(user.organizationId())
-                    : draftRepository.findByOrganizationIdAndStatusOrderByCreatedAtDesc(user.organizationId(), status);
+                    ? draftRepository.findByOrganizationIdOrderByCreatedAtDesc(organizationId)
+                    : draftRepository.findByOrganizationIdAndStatusOrderByCreatedAtDesc(organizationId, status);
         }
         return drafts.stream().map(mapper::toDraftResponse).toList();
     }
 
     @Transactional(readOnly = true)
     public DraftResponse getDraft(CurrentUser user, UUID draftId) {
-        var draft = draftRepository.findWithTagsById(draftId)
+        var draft = draftRepository.findWithTagsById(DraftId.of(draftId))
                 .orElseThrow(() -> new ResourceNotFoundException(KNOWLEDGE_DRAFT_RESOURCE, draftId));
         accessPolicy.requireDraftManagement(user, draft.getOrganizationId());
         return mapper.toDraftResponse(draft);
@@ -121,16 +130,18 @@ public class KnowledgeDraftService {
      */
     @Transactional
     public ArticleResponse publishDraft(CurrentUser user, UUID draftId, PublishDraftRequest request) {
-        var draft = draftRepository.findWithTagsById(draftId)
+        var draft = draftRepository.findWithTagsById(DraftId.of(draftId))
                 .orElseThrow(() -> new ResourceNotFoundException(KNOWLEDGE_DRAFT_RESOURCE, draftId));
         accessPolicy.requireDraftManagement(user, draft.getOrganizationId());
 
-        var title = request.title() == null || request.title().isBlank() ? draft.getTitle() : request.title().trim();
+        var title = request.title() == null || request.title().isBlank()
+                ? draft.getTitle()
+                : ArticleTitle.of(request.title().trim());
         var content = resolvePublicationContent(request, draft);
 
         var publishedAt = clock.instant();
         draft.publish(title, content, publishedAt);
-        var article = KnowledgeArticleEntity.publishFromDraft(draft, user.userId(), publishedAt);
+        var article = KnowledgeArticleEntity.publishFromDraft(draft, UserId.of(user.userId()), publishedAt);
         articleRepository.save(article);
         eventPublisher.publishKnowledgeArticlePublished(article);
         return mapper.toArticleResponse(article);
@@ -142,11 +153,11 @@ public class KnowledgeDraftService {
      */
     @Transactional
     public DraftResponse rejectDraft(CurrentUser user, UUID draftId, RejectDraftRequest request) {
-        var draft = draftRepository.findWithTagsById(draftId)
+        var draft = draftRepository.findWithTagsById(DraftId.of(draftId))
                 .orElseThrow(() -> new ResourceNotFoundException(KNOWLEDGE_DRAFT_RESOURCE, draftId));
         accessPolicy.requireDraftManagement(user, draft.getOrganizationId());
         var rejectedAt = clock.instant();
-        draft.reject(request.rejectionReason().trim(), rejectedAt);
+        draft.reject(RejectionReason.of(request.rejectionReason().trim()), rejectedAt);
         eventPublisher.publishKnowledgeArticleRejected(draft, user.userId());
         return mapper.toDraftResponse(draft);
     }
@@ -155,14 +166,14 @@ public class KnowledgeDraftService {
      * Chooses the body to publish: the manager's edited content when provided, otherwise the
      * AI-generated draft body. At least one must be non-blank.
      */
-    private String resolvePublicationContent(PublishDraftRequest request, KnowledgeArticleDraftEntity draft) {
+    private ArticleContent resolvePublicationContent(PublishDraftRequest request, KnowledgeArticleDraftEntity draft) {
         if (request.content() != null && !request.content().isBlank()) {
-            return request.content().trim();
+            return ArticleContent.of(request.content().trim());
         }
         var draftContent = draft.getContent();
-        if (draftContent == null || draftContent.isBlank()) {
+        if (draftContent == null || ArticleContentConverter.toPlainText(draftContent).isBlank()) {
             throw new BusinessValidationException("Article content is required for publication");
         }
-        return draftContent.trim();
+        return draftContent;
     }
 }

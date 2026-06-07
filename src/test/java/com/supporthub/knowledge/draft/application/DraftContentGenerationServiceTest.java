@@ -4,6 +4,7 @@ import com.supporthub.knowledge.ai.ArticleDraftContentGenerator;
 import com.supporthub.knowledge.ai.ArticleGenerationContext;
 import com.supporthub.knowledge.ai.ArticleGenerationException;
 import com.supporthub.knowledge.ai.GeneratedArticleContent;
+import com.supporthub.knowledge.draft.domain.DraftId;
 import com.supporthub.knowledge.messaging.event.DraftSaveFailureCode;
 import com.supporthub.knowledge.ticket.application.TicketConversationMessage;
 import com.supporthub.knowledge.ticket.application.TicketConversationProjection;
@@ -14,6 +15,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
@@ -32,13 +34,15 @@ class DraftContentGenerationServiceTest {
 
     @Test
     void shouldGenerateAndCompleteDraft() {
-        var draftId = UUID.randomUUID();
-        var ticketId = UUID.randomUUID();
-        var input = new DraftGenerationInput(draftId, ticketId, UUID.randomUUID(), "Reset VPN token");
+        var draftId = DraftId.of(UUID.randomUUID());
+        var ticketRawId = UUID.randomUUID();
+        var input = new DraftGenerationInput(UUID.randomUUID(), ticketRawId, UUID.randomUUID(), "Reset VPN token");
         when(store.findPendingGenerationIds(properties.batchSize())).thenReturn(List.of(draftId));
         when(store.claim(draftId)).thenReturn(Optional.of(input));
-        when(projection.conversation(ticketId)).thenReturn(List.of(new TicketConversationMessage("Operator", "Reset it.")));
-        when(generator.generate(any())).thenReturn(new GeneratedArticleContent("Generated body"));
+        when(projection.conversation(ticketRawId))
+                .thenReturn(List.of(new TicketConversationMessage("Operator", "Reset it.")));
+        when(generator.generate(any(ArticleGenerationContext.class)))
+                .thenReturn(new GeneratedArticleContent("Generated body"));
 
         service.generatePendingDrafts();
 
@@ -47,13 +51,14 @@ class DraftContentGenerationServiceTest {
 
     @Test
     void shouldFailDraftWhenGeneratorThrows() {
-        var draftId = UUID.randomUUID();
-        var ticketId = UUID.randomUUID();
-        var input = new DraftGenerationInput(draftId, ticketId, UUID.randomUUID(), "Reset VPN token");
+        var draftId = DraftId.of(UUID.randomUUID());
+        var ticketRawId = UUID.randomUUID();
+        var input = new DraftGenerationInput(UUID.randomUUID(), ticketRawId, UUID.randomUUID(), "Reset VPN token");
         when(store.findPendingGenerationIds(properties.batchSize())).thenReturn(List.of(draftId));
         when(store.claim(draftId)).thenReturn(Optional.of(input));
-        when(projection.conversation(ticketId)).thenReturn(List.of());
-        when(generator.generate(any())).thenThrow(new ArticleGenerationException("no content"));
+        when(projection.conversation(ticketRawId)).thenReturn(List.of());
+        when(generator.generate(any(ArticleGenerationContext.class)))
+                .thenThrow(new ArticleGenerationException("no content"));
 
         service.generatePendingDrafts();
 
@@ -62,7 +67,7 @@ class DraftContentGenerationServiceTest {
 
     @Test
     void shouldSkipDraftThatIsNoLongerClaimable() {
-        var draftId = UUID.randomUUID();
+        var draftId = DraftId.of(UUID.randomUUID());
         when(store.findPendingGenerationIds(properties.batchSize())).thenReturn(List.of(draftId));
         when(store.claim(draftId)).thenReturn(Optional.empty());
 
@@ -71,9 +76,5 @@ class DraftContentGenerationServiceTest {
         verify(store).findPendingGenerationIds(properties.batchSize());
         verify(store).claim(draftId);
         verifyNoMoreInteractions(store);
-    }
-
-    private static ArticleGenerationContext any() {
-        return org.mockito.ArgumentMatchers.any(ArticleGenerationContext.class);
     }
 }

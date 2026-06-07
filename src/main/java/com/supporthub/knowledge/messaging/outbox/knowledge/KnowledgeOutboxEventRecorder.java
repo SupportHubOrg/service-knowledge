@@ -5,6 +5,7 @@ import com.supporthub.knowledge.draft.persistence.KnowledgeArticleDraftEntity;
 import com.supporthub.knowledge.messaging.KnowledgeEventPublisher;
 import com.supporthub.knowledge.messaging.event.DraftSaveFailureCode;
 import com.supporthub.knowledge.messaging.outbox.core.persistence.OutboxEventWriter;
+import com.supporthub.knowledge.shared.identity.TicketIdConverter;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 
@@ -23,7 +24,7 @@ public class KnowledgeOutboxEventRecorder implements KnowledgeEventPublisher {
 
     @Override
     public void publishKnowledgeArticleDraftSaved(KnowledgeArticleDraftEntity draft) {
-        eventWriter.append(draft.getSourceTicketId().toString(), payloadFactory.draftSaved(draft));
+        eventWriter.append(TicketIdConverter.toRaw(draft.getSourceTicketId()).toString(), payloadFactory.draftSaved(draft));
     }
 
     @Override
@@ -39,11 +40,11 @@ public class KnowledgeOutboxEventRecorder implements KnowledgeEventPublisher {
 
     @Override
     public void publishKnowledgeArticlePublished(KnowledgeArticleEntity article) {
-        eventWriter.append(article.getSourceTicketId().toString(), payloadFactory.articlePublished(article));
+        eventWriter.append(TicketIdConverter.toRaw(article.getSourceTicketId()).toString(), payloadFactory.articlePublished(article));
     }
 
     @Override
     public void publishKnowledgeArticleRejected(KnowledgeArticleDraftEntity draft, UUID rejectedById) {
-        eventWriter.append(draft.getSourceTicketId().toString(), payloadFactory.articleRejected(draft, rejectedById));
+        eventWriter.append(TicketIdConverter.toRaw(draft.getSourceTicketId()).toString(), payloadFactory.articleRejected(draft, rejectedById));
     }
 }

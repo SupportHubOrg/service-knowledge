@@ -1,17 +1,19 @@
 package com.supporthub.knowledge.ticket.persistence;
 
+import com.supporthub.knowledge.shared.identity.MessageId;
+import com.supporthub.knowledge.shared.identity.OrganizationId;
+import com.supporthub.knowledge.shared.identity.TicketId;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 import java.util.List;
-import java.util.UUID;
 
-public interface TicketConversationMessageRepository extends JpaRepository<TicketConversationMessageEntity, UUID> {
+public interface TicketConversationMessageRepository extends JpaRepository<TicketConversationMessageEntity, MessageId> {
 
-    boolean existsByMessageId(UUID messageId);
+    boolean existsByMessageId(MessageId messageId);
 
-    List<TicketConversationMessageEntity> findByTicketIdOrderByCreatedAtAsc(UUID ticketId);
+    List<TicketConversationMessageEntity> findByTicketIdOrderByCreatedAtAsc(TicketId ticketId);
 
-    void deleteByTicketId(UUID ticketId);
+    void deleteByTicketId(TicketId ticketId);
 
-    void deleteByOrganizationId(UUID organizationId);
+    void deleteByOrganizationId(OrganizationId organizationId);
 }

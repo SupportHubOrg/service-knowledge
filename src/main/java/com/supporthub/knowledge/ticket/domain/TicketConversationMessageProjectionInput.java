@@ -1,27 +1,29 @@
 package com.supporthub.knowledge.ticket.domain;
 
+import com.supporthub.knowledge.shared.identity.MessageId;
+import com.supporthub.knowledge.shared.identity.OrganizationId;
+import com.supporthub.knowledge.shared.identity.TicketId;
+import com.supporthub.knowledge.shared.identity.UserId;
 import lombok.Builder;
 import lombok.Getter;
-
-import java.util.UUID;
 
 @Getter
 public final class TicketConversationMessageProjectionInput {
 
-    private final UUID messageId;
-    private final UUID ticketId;
-    private final UUID organizationId;
-    private final UUID senderId;
-    private final String senderType;
-    private final String message;
+    private final MessageId messageId;
+    private final TicketId ticketId;
+    private final OrganizationId organizationId;
+    private final UserId senderId;
+    private final SenderType senderType;
+    private final MessageBody message;
 
     @Builder
-    private TicketConversationMessageProjectionInput(UUID messageId,
-                                                     UUID ticketId,
-                                                     UUID organizationId,
-                                                     UUID senderId,
-                                                     String senderType,
-                                                     String message) {
+    private TicketConversationMessageProjectionInput(MessageId messageId,
+                                                     TicketId ticketId,
+                                                     OrganizationId organizationId,
+                                                     UserId senderId,
+                                                     SenderType senderType,
+                                                     MessageBody message) {
         this.messageId = messageId;
         this.ticketId = ticketId;
         this.organizationId = organizationId;

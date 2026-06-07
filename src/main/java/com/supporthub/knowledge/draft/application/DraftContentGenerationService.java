@@ -3,6 +3,7 @@ package com.supporthub.knowledge.draft.application;
 import com.supporthub.knowledge.ai.ArticleDraftContentGenerator;
 import com.supporthub.knowledge.ai.ArticleGenerationContext;
 import com.supporthub.knowledge.ai.ConversationMessage;
+import com.supporthub.knowledge.draft.domain.DraftId;
 import com.supporthub.knowledge.messaging.event.DraftSaveFailureCode;
 import com.supporthub.knowledge.ticket.application.TicketConversationProjection;
 import lombok.RequiredArgsConstructor;
@@ -10,7 +11,6 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
-import java.util.UUID;
 
 /**
  * Phase 2 of article creation: turns {@code PENDING_GENERATION} drafts into reviewable ones by
@@ -38,7 +38,7 @@ public class DraftContentGenerationService {
         }
     }
 
-    private void generateOne(UUID draftId) {
+    private void generateOne(DraftId draftId) {
         var input = generationStore.claim(draftId).orElse(null);
         if (input == null) {
             return;

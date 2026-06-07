@@ -4,7 +4,9 @@ import com.supporthub.knowledge.article.api.ArticleResponse;
 import com.supporthub.knowledge.draft.api.PublishDraftRequest;
 import com.supporthub.knowledge.draft.application.DraftContentGenerationService;
 import com.supporthub.knowledge.draft.application.KnowledgeDraftService;
+import com.supporthub.knowledge.draft.domain.DraftIds;
 import com.supporthub.knowledge.draft.persistence.KnowledgeArticleDraftRepository;
+import com.supporthub.knowledge.shared.identity.TicketId;
 import com.supporthub.knowledge.messaging.event.KnowledgeArticleProposedPayload;
 import com.supporthub.knowledge.messaging.event.TicketMessageAddedPayload;
 import com.supporthub.knowledge.messaging.outbox.core.persistence.OutboxEventStatus;
@@ -130,7 +132,8 @@ class OutboxKafkaIntegrationTest extends KnowledgeIntegrationTestSupport {
         // Phase 2: generate bodies, which emits the DraftSaved events into the outbox.
         generationService.generatePendingDrafts();
 
-        var firstDraftId = draftRepository.findWithTagsBySourceTicketId(data.firstTicketId()).orElseThrow().getId();
+        var firstDraftId = DraftIds.toRaw(
+                draftRepository.findWithTagsBySourceTicketId(TicketId.of(data.firstTicketId())).orElseThrow().getId());
         var manager = new CurrentUser(
                 data.managerId(),
                 data.organizationId(),

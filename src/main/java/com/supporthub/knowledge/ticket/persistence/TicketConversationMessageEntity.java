@@ -1,9 +1,17 @@
 package com.supporthub.knowledge.ticket.persistence;
 
+import com.supporthub.knowledge.shared.identity.MessageId;
+import com.supporthub.knowledge.shared.identity.OrganizationId;
+import com.supporthub.knowledge.shared.identity.TicketId;
+import com.supporthub.knowledge.shared.identity.UserId;
+import com.supporthub.knowledge.ticket.domain.MessageBody;
+import com.supporthub.knowledge.ticket.domain.SenderType;
 import com.supporthub.knowledge.ticket.domain.TicketConversationMessageProjectionInput;
 import jakarta.persistence.Column;
+import jakarta.persistence.EmbeddedId;
 import jakarta.persistence.Entity;
-import jakarta.persistence.Id;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
 import jakarta.persistence.Table;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
@@ -13,7 +21,6 @@ import lombok.NoArgsConstructor;
 import org.hibernate.annotations.CreationTimestamp;
 
 import java.time.Instant;
-import java.util.UUID;
 
 /**
  * Local projection of a single ticket conversation message, built from {@code TicketMessageAdded}
@@ -34,24 +41,24 @@ import java.util.UUID;
 @AllArgsConstructor(access = AccessLevel.PRIVATE)
 public class TicketConversationMessageEntity {
 
-    @Id
-    @Column(name = "message_id")
-    private UUID messageId;
+    @EmbeddedId
+    private MessageId messageId;
 
     @Column(nullable = false, name = "ticket_id")
-    private UUID ticketId;
+    private TicketId ticketId;
 
     @Column(nullable = false, name = "organization_id")
-    private UUID organizationId;
+    private OrganizationId organizationId;
 
     @Column(nullable = false, name = "sender_id")
-    private UUID senderId;
+    private UserId senderId;
 
+    @Enumerated(EnumType.STRING)
     @Column(nullable = false, name = "sender_type")
-    private String senderType;
+    private SenderType senderType;
 
     @Column(nullable = false, columnDefinition = "TEXT")
-    private String message;
+    private MessageBody message;
 
     @Column(nullable = false, name = "created_at")
     @CreationTimestamp

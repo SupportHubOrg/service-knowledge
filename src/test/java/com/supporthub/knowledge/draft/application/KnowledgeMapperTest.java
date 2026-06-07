@@ -1,9 +1,18 @@
 package com.supporthub.knowledge.draft.application;
 
 import com.supporthub.knowledge.article.persistence.KnowledgeArticleEntity;
+import com.supporthub.knowledge.draft.domain.DraftId;
+import com.supporthub.knowledge.draft.domain.DraftIds;
 import com.supporthub.knowledge.draft.domain.PendingDraftProposal;
 import com.supporthub.knowledge.draft.persistence.KnowledgeArticleDraftEntity;
 import com.supporthub.knowledge.messaging.event.KnowledgeArticleProposedPayload;
+import com.supporthub.knowledge.shared.content.ArticleContent;
+import com.supporthub.knowledge.shared.content.ArticleTitle;
+import com.supporthub.knowledge.shared.identity.OrganizationId;
+import com.supporthub.knowledge.shared.identity.TagId;
+import com.supporthub.knowledge.shared.identity.TagIdConverter;
+import com.supporthub.knowledge.shared.identity.TicketId;
+import com.supporthub.knowledge.shared.identity.UserId;
 import org.junit.jupiter.api.Test;
 import org.mapstruct.factory.Mappers;
 
@@ -19,29 +28,29 @@ class KnowledgeMapperTest {
 
     @Test
     void shouldMapDraftTags() {
-        var tagId = UUID.randomUUID();
+        var tagId = TagId.of(UUID.randomUUID());
         var draft = pendingGenerationDraft("Draft title", List.of(tagId));
 
         var response = mapper.toDraftResponse(draft);
 
-        assertThat(response.tags()).containsExactly(tagId);
+        assertThat(response.tags()).containsExactly(TagIdConverter.toRaw(tagId));
         assertThat(response.title()).isEqualTo("Draft title");
     }
 
     @Test
     void shouldMapPublishedArticle() {
-        var draft = pendingGenerationDraft("Draft title", List.of(UUID.randomUUID()));
-        draft.completeGeneration("Generated content", Instant.parse("2026-06-01T11:30:00Z"));
-        draft.publish("Article title", "Article content", Instant.parse("2026-06-01T12:00:00Z"));
+        var draft = pendingGenerationDraft("Draft title", List.of(TagId.of(UUID.randomUUID())));
+        draft.completeGeneration(ArticleContent.of("Generated content"), Instant.parse("2026-06-01T11:30:00Z"));
+        draft.publish(ArticleTitle.of("Article title"), ArticleContent.of("Article content"), Instant.parse("2026-06-01T12:00:00Z"));
         var article = KnowledgeArticleEntity.publishFromDraft(
                 draft,
-                UUID.randomUUID(),
+                UserId.of(UUID.randomUUID()),
                 Instant.parse("2026-06-01T12:01:00Z")
         );
 
         var response = mapper.toArticleResponse(article);
 
-        assertThat(response.draftId()).isEqualTo(draft.getId());
+        assertThat(response.draftId()).isEqualTo(DraftIds.toRaw(draft.getId()));
         assertThat(response.title()).isEqualTo("Article title");
         assertThat(response.tags()).hasSize(1);
     }
@@ -62,21 +71,21 @@ class KnowledgeMapperTest {
 
         var proposal = mapper.toPendingDraftProposal(payload, organizationId);
 
-        assertThat(proposal.getSourceTicketId()).isEqualTo(ticketId);
-        assertThat(proposal.getOrganizationId()).isEqualTo(organizationId);
-        assertThat(proposal.getProposerId()).isEqualTo(proposerId);
-        assertThat(proposal.getTitle()).isEqualTo("Draft title");
-        assertThat(proposal.getTagIds()).containsExactly(tagId);
+        assertThat(proposal.getSourceTicketId()).isEqualTo(TicketId.of(ticketId));
+        assertThat(proposal.getOrganizationId()).isEqualTo(OrganizationId.of(organizationId));
+        assertThat(proposal.getProposerId()).isEqualTo(UserId.of(proposerId));
+        assertThat(proposal.getTitle()).isEqualTo(ArticleTitle.of("Draft title"));
+        assertThat(proposal.getTagIds()).containsExactly(TagId.of(tagId));
     }
 
-    private KnowledgeArticleDraftEntity pendingGenerationDraft(String title, List<UUID> tagIds) {
+    private KnowledgeArticleDraftEntity pendingGenerationDraft(String title, List<TagId> tagIds) {
         return KnowledgeArticleDraftEntity.pendingGeneration(
-                UUID.randomUUID(),
+                DraftId.generate(),
                 PendingDraftProposal.builder()
-                        .sourceTicketId(UUID.randomUUID())
-                        .organizationId(UUID.randomUUID())
-                        .proposerId(UUID.randomUUID())
-                        .title(title)
+                        .sourceTicketId(TicketId.of(UUID.randomUUID()))
+                        .organizationId(OrganizationId.of(UUID.randomUUID()))
+                        .proposerId(UserId.of(UUID.randomUUID()))
+                        .title(ArticleTitle.of(title))
                         .tagIds(tagIds)
                         .build()
         );

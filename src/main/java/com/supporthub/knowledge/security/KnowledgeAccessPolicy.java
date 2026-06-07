@@ -1,8 +1,7 @@
 package com.supporthub.knowledge.security;
 
+import com.supporthub.knowledge.shared.identity.OrganizationId;
 import org.springframework.stereotype.Component;
-
-import java.util.UUID;
 
 /**
  * Single place that holds the authorization rules for knowledge resources. Each method throws
@@ -22,7 +21,7 @@ import java.util.UUID;
 public class KnowledgeAccessPolicy {
 
     /** Allows SupportHub admins, or organization managers operating on their own organization. */
-    public void requireDraftManagement(CurrentUser user, UUID organizationId) {
+    public void requireDraftManagement(CurrentUser user, OrganizationId organizationId) {
         if (user.isSupportHubAdministrator()) {
             return;
         }
@@ -33,7 +32,7 @@ public class KnowledgeAccessPolicy {
     }
 
     /** Allows SupportHub admins, or any member of the article's organization. */
-    public void requireArticleRead(CurrentUser user, UUID organizationId) {
+    public void requireArticleRead(CurrentUser user, OrganizationId organizationId) {
         if (user.isSupportHubAdministrator() || user.belongsTo(organizationId)) {
             return;
         }

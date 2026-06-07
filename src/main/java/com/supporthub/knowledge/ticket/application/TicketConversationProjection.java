@@ -1,6 +1,11 @@
 package com.supporthub.knowledge.ticket.application;
 
 import com.supporthub.knowledge.messaging.event.TicketMessageAddedPayload;
+import com.supporthub.knowledge.shared.identity.MessageId;
+import com.supporthub.knowledge.shared.identity.OrganizationId;
+import com.supporthub.knowledge.shared.identity.OrganizationIdConverter;
+import com.supporthub.knowledge.shared.identity.TicketId;
+import com.supporthub.knowledge.ticket.domain.MessageBodyConverter;
 import com.supporthub.knowledge.ticket.persistence.TicketConversationMessageEntity;
 import com.supporthub.knowledge.ticket.persistence.TicketConversationMessageRepository;
 import lombok.RequiredArgsConstructor;
@@ -28,7 +33,7 @@ public class TicketConversationProjection {
     /** Idempotently records a conversation message; redelivered messages (same id) are skipped. */
     @Transactional
     public void project(TicketMessageAddedPayload payload) {
-        if (repository.existsByMessageId(payload.messageId())) {
+        if (repository.existsByMessageId(MessageId.of(payload.messageId()))) {
             log.debug("Skipping already projected ticket message. messageId={}, ticketId={}",
                     payload.messageId(), payload.ticketId());
             return;
@@ -40,28 +45,31 @@ public class TicketConversationProjection {
     /** Resolves the organization of a ticket from its projected messages, if any are known. */
     @Transactional(readOnly = true)
     public Optional<UUID> resolveOrganizationId(UUID ticketId) {
-        return repository.findByTicketIdOrderByCreatedAtAsc(ticketId).stream()
+        return repository.findByTicketIdOrderByCreatedAtAsc(TicketId.of(ticketId)).stream()
                 .findFirst()
-                .map(TicketConversationMessageEntity::getOrganizationId);
+                .map(TicketConversationMessageEntity::getOrganizationId)
+                .map(OrganizationIdConverter::toRaw);
     }
 
     /** Returns the ticket conversation ordered chronologically. */
     @Transactional(readOnly = true)
     public List<TicketConversationMessage> conversation(UUID ticketId) {
-        return repository.findByTicketIdOrderByCreatedAtAsc(ticketId).stream()
-                .map(message -> new TicketConversationMessage(message.getSenderType(), message.getMessage()))
+        return repository.findByTicketIdOrderByCreatedAtAsc(TicketId.of(ticketId)).stream()
+                .map(message -> new TicketConversationMessage(
+                        message.getSenderType().toWireValue(),
+                        MessageBodyConverter.toPlainText(message.getMessage())))
                 .toList();
     }
 
     /** Drops all projected messages for a ticket (cleanup on ticket deletion). */
     @Transactional
     public void deleteByTicket(UUID ticketId) {
-        repository.deleteByTicketId(ticketId);
+        repository.deleteByTicketId(TicketId.of(ticketId));
     }
 
     /** Drops all projected messages for an organization (cleanup on organization deletion). */
     @Transactional
     public void deleteByOrganization(UUID organizationId) {
-        repository.deleteByOrganizationId(organizationId);
+        repository.deleteByOrganizationId(OrganizationId.of(organizationId));
     }
 }

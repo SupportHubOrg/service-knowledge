@@ -1,15 +1,21 @@
 package com.supporthub.knowledge.article.persistence;
 
+import com.supporthub.knowledge.article.domain.ArticleId;
 import com.supporthub.knowledge.article.domain.ArticleStatus;
 import com.supporthub.knowledge.draft.persistence.KnowledgeArticleDraftEntity;
 import com.supporthub.knowledge.draft.persistence.KnowledgeArticleTagEntity;
+import com.supporthub.knowledge.shared.content.ArticleContent;
+import com.supporthub.knowledge.shared.content.ArticleTitle;
+import com.supporthub.knowledge.shared.identity.OrganizationId;
+import com.supporthub.knowledge.shared.identity.TicketId;
+import com.supporthub.knowledge.shared.identity.UserId;
 import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
+import jakarta.persistence.EmbeddedId;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
 import jakarta.persistence.FetchType;
-import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.OneToMany;
 import jakarta.persistence.OneToOne;
@@ -26,7 +32,6 @@ import org.hibernate.annotations.UpdateTimestamp;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.UUID;
 
 /**
  * A published knowledge article - the immutable, read-only result of accepting a draft.
@@ -44,31 +49,31 @@ import java.util.UUID;
 @AllArgsConstructor(access = AccessLevel.PRIVATE)
 public class KnowledgeArticleEntity {
 
-    @Id
-    private UUID id;
+    @EmbeddedId
+    private ArticleId id;
 
     @OneToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "draft_id", nullable = false)
     private KnowledgeArticleDraftEntity draft;
 
     @Column(nullable = false, name = "source_ticket_id")
-    private UUID sourceTicketId;
+    private TicketId sourceTicketId;
 
     @Column(nullable = false, name = "organization_id")
-    private UUID organizationId;
+    private OrganizationId organizationId;
 
     @Column(nullable = false)
-    private String title;
+    private ArticleTitle title;
 
     @Column(nullable = false, columnDefinition = "TEXT")
-    private String content;
+    private ArticleContent content;
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
     private ArticleStatus status;
 
     @Column(nullable = false, name = "published_by_id")
-    private UUID publishedById;
+    private UserId publishedById;
 
     @Column(nullable = false, name = "published_at")
     private Instant publishedAt;
@@ -95,10 +100,10 @@ public class KnowledgeArticleEntity {
      * @param publishedById the manager who approved the publication
      */
     public static KnowledgeArticleEntity publishFromDraft(KnowledgeArticleDraftEntity draft,
-                                                          UUID publishedById,
+                                                          UserId publishedById,
                                                           Instant publishedAt) {
         var article = KnowledgeArticleEntity.builder()
-                .id(UUID.randomUUID())
+                .id(ArticleId.generate())
                 .draft(draft)
                 .sourceTicketId(draft.getSourceTicketId())
                 .organizationId(draft.getOrganizationId())
