@@ -96,9 +96,21 @@ application:
       ticket-deleted:
         event-type: ${EVENT_TICKET_DELETED:TicketDeleted}
         version: ${EVENT_TICKET_DELETED_VERSION:1}
+      organization-created:
+        event-type: ${EVENT_ORGANIZATION_CREATED:OrganizationCreated}
+        version: ${EVENT_ORGANIZATION_CREATED_VERSION:1}
       organization-deleted:
         event-type: ${EVENT_ORGANIZATION_DELETED:OrganizationDeleted}
         version: ${EVENT_ORGANIZATION_DELETED_VERSION:1}
+      user-invitation-accepted:
+        event-type: ${EVENT_USER_INVITATION_ACCEPTED:UserInvitationAccepted}
+        version: ${EVENT_USER_INVITATION_ACCEPTED_VERSION:1}
+      user-role-updated:
+        event-type: ${EVENT_USER_ROLE_UPDATED:UserRoleUpdated}
+        version: ${EVENT_USER_ROLE_UPDATED_VERSION:1}
+      user-removed-from-organization:
+        event-type: ${EVENT_USER_REMOVED_FROM_ORGANIZATION:UserRemovedFromOrganization}
+        version: ${EVENT_USER_REMOVED_FROM_ORGANIZATION_VERSION:1}
       knowledge-article-draft-saved:
         event-type: ${EVENT_KNOWLEDGE_ARTICLE_DRAFT_SAVED:KnowledgeArticleDraftSaved}
         version: ${EVENT_KNOWLEDGE_ARTICLE_DRAFT_SAVED_VERSION:1}
