@@ -118,8 +118,6 @@ application:
         event-type: ${EVENT_KNOWLEDGE_ARTICLE_DRAFT_SAVE_FAILED:KnowledgeArticleDraftSaveFailed}
         version: ${EVENT_KNOWLEDGE_ARTICLE_DRAFT_SAVE_FAILED_VERSION:1}
       knowledge-article-published:
-        # Wire name deviates from docs (KnowledgeArticlePublished): ticket-management consumes
-        # "KnowledgeArticleApproved". Override via env to realign once ticket-management is fixed.
         event-type: ${EVENT_KNOWLEDGE_ARTICLE_PUBLISHED:KnowledgeArticleApproved}
         version: ${EVENT_KNOWLEDGE_ARTICLE_PUBLISHED_VERSION:1}
       knowledge-article-rejected:
@@ -133,7 +131,7 @@ application:
     producer:
       knowledge-management-events: ${KAFKA_TOPIC_KNOWLEDGE_MANAGEMENT_EVENTS:knowledge-management-events}
     dlt:
-      name: ${KAFKA_TOPIC_KNOWLEDGE_MANAGEMENT_DLT:knowledge-management-events-dlt}
+      name: ${KAFKA_TOPIC_KNOWLEDGE_MANAGEMENT_DLT:knowledge-base-events-dlt}
       backoff-ms: ${KAFKA_DLT_BACKOFF_MS:1000}
       max-attempts: ${KAFKA_DLT_MAX_ATTEMPTS:5}
     topics:
@@ -143,7 +141,7 @@ application:
         min-in-sync-replicas: ${KAFKA_TOPIC_MIN_ISR:1}
       owned:
         knowledge-management-events: ${KAFKA_TOPIC_KNOWLEDGE_MANAGEMENT_EVENTS:knowledge-management-events}
-        knowledge-management-events-dlt: ${KAFKA_TOPIC_KNOWLEDGE_MANAGEMENT_DLT:knowledge-management-events-dlt}
+        knowledge-base-events-dlt: ${KAFKA_TOPIC_KNOWLEDGE_MANAGEMENT_DLT:knowledge-base-events-dlt}
   outbox:
     batch-size: ${OUTBOX_BATCH_SIZE:50}
     poll-delay-ms: ${OUTBOX_POLL_DELAY_MS:2000}
@@ -155,8 +153,7 @@ application:
     stuck-timeout: ${OUTBOX_STUCK_TIMEOUT:PT2M}
     routing:
       knowledge:
-        # Keyed by the wire eventType. KnowledgeArticleApproved is the published-article event
-        # (see integration-events.contracts.knowledge-article-published, deviates from docs).
+        # Keyed by the wire eventType.
         event-topics:
           KnowledgeArticleDraftSaved: ${KAFKA_TOPIC_KNOWLEDGE_MANAGEMENT_EVENTS:knowledge-management-events}
           KnowledgeArticleDraftSaveFailed: ${KAFKA_TOPIC_KNOWLEDGE_MANAGEMENT_EVENTS:knowledge-management-events}

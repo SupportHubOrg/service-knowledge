@@ -10,7 +10,7 @@ import org.testcontainers.utility.DockerImageName;
 public abstract class KnowledgeIntegrationTestSupport {
 
     protected static final String KNOWLEDGE_EVENTS_TOPIC = "knowledge-management-events-it";
-    protected static final String KNOWLEDGE_EVENTS_DLT_TOPIC = "knowledge-management-events-dlt-it";
+    protected static final String KNOWLEDGE_EVENTS_DLT_TOPIC = "knowledge-base-events-dlt-it";
     protected static final String TICKET_EVENTS_TOPIC = "ticket-management-events-it";
     protected static final String ORGANIZATION_ACCESS_EVENTS_TOPIC = "organization-access-events-it";
 
@@ -44,7 +44,7 @@ public abstract class KnowledgeIntegrationTestSupport {
         registry.add("application.kafka.producer.knowledge-management-events", () -> KNOWLEDGE_EVENTS_TOPIC);
         registry.add("application.kafka.dlt.name", () -> KNOWLEDGE_EVENTS_DLT_TOPIC);
         registry.add("application.kafka.topics.owned.knowledge-management-events", () -> KNOWLEDGE_EVENTS_TOPIC);
-        registry.add("application.kafka.topics.owned.knowledge-management-events-dlt", () -> KNOWLEDGE_EVENTS_DLT_TOPIC);
+        registry.add("application.kafka.topics.owned.knowledge-base-events-dlt", () -> KNOWLEDGE_EVENTS_DLT_TOPIC);
         registry.add("application.outbox.routing.knowledge.event-topics.KnowledgeArticleDraftSaved",
                 () -> KNOWLEDGE_EVENTS_TOPIC);
         registry.add("application.outbox.routing.knowledge.event-topics.KnowledgeArticleDraftSaveFailed",
