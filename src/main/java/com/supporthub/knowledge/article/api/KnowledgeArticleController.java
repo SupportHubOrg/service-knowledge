@@ -9,9 +9,12 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationToken;
+import jakarta.validation.constraints.NotBlank;
+import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.util.List;
@@ -20,6 +23,7 @@ import java.util.UUID;
 @RestController
 @RequestMapping("/api/v1/knowledge/articles")
 @RequiredArgsConstructor
+@Validated
 @Tag(name = "Knowledge Articles",
         description = "Read-only access to published knowledge articles, scoped to the caller's organization.")
 public class KnowledgeArticleController {
@@ -33,6 +37,17 @@ public class KnowledgeArticleController {
                     + "organization's articles; admins without an organization see all.")
     public List<ArticleResponse> listPublishedArticles(JwtAuthenticationToken authentication) {
         return articleService.listPublishedArticles(currentUserResolver.from(jwt(authentication)));
+    }
+
+    @GetMapping("/search")
+    @Operation(summary = "Search published articles",
+            description = "Full-text search over article title and body. Non-admins search only their "
+                    + "organization's articles; admins without an organization search all.")
+    public List<ArticleResponse> searchPublishedArticles(
+            @Parameter(description = "Search query.", example = "vpn token reset")
+            @RequestParam("q") @NotBlank String query,
+            JwtAuthenticationToken authentication) {
+        return articleService.searchPublishedArticles(currentUserResolver.from(jwt(authentication)), query);
     }
 
     @GetMapping("/{articleId}")

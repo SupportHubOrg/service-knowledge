@@ -1,7 +1,6 @@
 package com.supporthub.knowledge.draft.api;
 
 import io.swagger.v3.oas.annotations.media.Schema;
-import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
 
 @Schema(description = "Payload to publish a draft as a knowledge article.")
@@ -12,10 +11,9 @@ public record PublishDraftRequest(
         @Size(max = 255)
         String title,
 
-        @Schema(description = "Final article body. Required and trimmed before saving.",
-                example = "1. Open the portal... 2. Click 'Reset token'...",
-                requiredMode = Schema.RequiredMode.REQUIRED, maxLength = 20000)
-        @NotBlank
+        @Schema(description = "Optional final article body. If blank, the AI-generated draft body is "
+                + "published as-is; at least one of the two must be present.",
+                example = "1. Open the portal... 2. Click 'Reset token'...", maxLength = 20000)
         @Size(max = 20000)
         String content
 ) {

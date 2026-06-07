@@ -39,6 +39,16 @@ public class KnowledgeArticleService {
     }
 
     @Transactional(readOnly = true)
+    public List<ArticleResponse> searchPublishedArticles(CurrentUser user, String query) {
+        accessPolicy.requireOrganizationScope(user);
+        var status = ArticleStatus.PUBLISHED.name();
+        var matches = user.isSupportHubAdministrator() && user.organizationId() == null
+                ? articleRepository.search(status, query)
+                : articleRepository.searchByOrganization(user.organizationId(), status, query);
+        return matches.stream().map(mapper::toArticleResponse).toList();
+    }
+
+    @Transactional(readOnly = true)
     public ArticleResponse getPublishedArticle(CurrentUser user, UUID articleId) {
         var article = articleRepository.findWithTagsById(articleId)
                 .orElseThrow(() -> new ResourceNotFoundException("Knowledge article", articleId));

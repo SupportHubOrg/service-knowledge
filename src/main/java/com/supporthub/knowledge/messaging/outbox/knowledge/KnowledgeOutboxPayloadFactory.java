@@ -3,6 +3,7 @@ package com.supporthub.knowledge.messaging.outbox.knowledge;
 import com.supporthub.knowledge.article.persistence.KnowledgeArticleEntity;
 import com.supporthub.knowledge.draft.persistence.KnowledgeArticleDraftEntity;
 import com.supporthub.knowledge.draft.persistence.KnowledgeArticleTagEntity;
+import com.supporthub.knowledge.messaging.event.DraftSaveFailureCode;
 import com.supporthub.knowledge.messaging.event.KnowledgeArticleDraftSaveFailedPayload;
 import com.supporthub.knowledge.messaging.event.KnowledgeArticleDraftSavedPayload;
 import com.supporthub.knowledge.messaging.event.KnowledgeArticlePublishedPayload;
@@ -27,7 +28,7 @@ public class KnowledgeOutboxPayloadFactory {
 
     public KnowledgeArticleDraftSaveFailedPayload draftSaveFailed(UUID sourceTicketId,
                                                                   UUID organizationId,
-                                                                  String failureCode,
+                                                                  DraftSaveFailureCode failureCode,
                                                                   String failureMessage) {
         return new KnowledgeArticleDraftSaveFailedPayload(
                 sourceTicketId,

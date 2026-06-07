@@ -24,11 +24,13 @@ import java.util.UUID;
 /**
  * Aggregate root for a proposed knowledge article awaiting review.
  *
- * <p>State machine: a draft is born {@code PENDING_REVIEW} and from there can only move to
- * {@code PUBLISHED} (manager accepted it) or {@code REJECTED} (manager declined it). Both are
- * terminal. The transition methods {@link #publish} and {@link #reject} enforce this and throw
- * {@link IllegalDraftStateException} when called on a draft that is no longer pending, protecting
- * against double-publish / publish-after-reject races.
+ * <p>State machine: a draft is born {@code PENDING_GENERATION} (its body is generated asynchronously
+ * from the ticket conversation). From there it moves to {@code PENDING_REVIEW} once content is ready
+ * ({@link #completeGeneration}) or to {@code GENERATION_FAILED} if generation could not produce a
+ * body ({@link #failGeneration}). A {@code PENDING_REVIEW} draft can then only move to
+ * {@code PUBLISHED} (manager accepted it) or {@code REJECTED} (manager declined it); both terminal.
+ * The transition methods enforce the legal source state and throw {@link IllegalDraftStateException}
+ * otherwise, protecting against double-publish / publish-after-reject and double-generation races.
  *
  * <p>{@code source_ticket_id} is unique (one draft per originating ticket) and {@link Version}
  * provides optimistic locking for concurrent manager actions. Tags are owned by the draft and
@@ -82,25 +84,55 @@ public class KnowledgeArticleDraftEntity {
     @OneToMany(mappedBy = "draft", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<KnowledgeArticleTagEntity> tags = new ArrayList<>();
 
-    /** Factory for a brand-new draft in {@code PENDING_REVIEW}, with its tags attached. */
-    public static KnowledgeArticleDraftEntity pending(UUID sourceTicketId,
-                                                      UUID organizationId,
-                                                      UUID proposerId,
-                                                      String title,
-                                                      List<UUID> tagIds,
-                                                      Instant now) {
+    /**
+     * Factory for a brand-new draft in {@code PENDING_GENERATION}, with its tags attached. The body
+     * is filled in later by the asynchronous generation step via {@link #completeGeneration}.
+     */
+    public static KnowledgeArticleDraftEntity pendingGeneration(UUID sourceTicketId,
+                                                               UUID organizationId,
+                                                               UUID proposerId,
+                                                               String title,
+                                                               List<UUID> tagIds,
+                                                               Instant now) {
         var draft = KnowledgeArticleDraftEntity.builder()
                 .id(UUID.randomUUID())
                 .sourceTicketId(sourceTicketId)
                 .organizationId(organizationId)
                 .proposerId(proposerId)
                 .title(title)
-                .status(DraftStatus.PENDING_REVIEW)
+                .status(DraftStatus.PENDING_GENERATION)
                 .createdAt(now)
                 .updatedAt(now)
                 .build();
         draft.replaceTags(tagIds, now);
         return draft;
+    }
+
+    /**
+     * Attaches the generated body and moves the draft to {@code PENDING_REVIEW}.
+     *
+     * @throws IllegalDraftStateException if the draft is not {@code PENDING_GENERATION}
+     */
+    public void completeGeneration(String content, Instant now) {
+        if (status != DraftStatus.PENDING_GENERATION) {
+            throw new IllegalDraftStateException(id, status, "completeGeneration");
+        }
+        this.content = content;
+        this.status = DraftStatus.PENDING_REVIEW;
+        this.updatedAt = now;
+    }
+
+    /**
+     * Marks generation as failed (no body could be produced).
+     *
+     * @throws IllegalDraftStateException if the draft is not {@code PENDING_GENERATION}
+     */
+    public void failGeneration(Instant now) {
+        if (status != DraftStatus.PENDING_GENERATION) {
+            throw new IllegalDraftStateException(id, status, "failGeneration");
+        }
+        this.status = DraftStatus.GENERATION_FAILED;
+        this.updatedAt = now;
     }
 
     /**

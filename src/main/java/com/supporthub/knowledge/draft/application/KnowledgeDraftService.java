@@ -10,8 +10,10 @@ import com.supporthub.knowledge.draft.domain.DraftStatus;
 import com.supporthub.knowledge.draft.persistence.KnowledgeArticleDraftEntity;
 import com.supporthub.knowledge.draft.persistence.KnowledgeArticleDraftRepository;
 import com.supporthub.knowledge.messaging.KnowledgeEventPublisher;
+import com.supporthub.knowledge.messaging.event.DraftSaveFailureCode;
 import com.supporthub.knowledge.messaging.event.KnowledgeArticleProposedPayload;
 import com.supporthub.knowledge.security.CurrentUser;
+import com.supporthub.knowledge.ticket.application.TicketConversationProjection;
 import com.supporthub.knowledge.security.KnowledgeAccessPolicy;
 import com.supporthub.knowledge.shared.error.BusinessValidationException;
 import com.supporthub.knowledge.shared.error.ResourceNotFoundException;
@@ -47,20 +49,47 @@ public class KnowledgeDraftService {
     private final KnowledgeMapper mapper;
     private final KnowledgeAccessPolicy accessPolicy;
     private final KnowledgeEventPublisher eventPublisher;
+    private final TicketConversationProjection ticketConversationProjection;
     private final Clock clock;
 
     /**
-     * Creates a draft from a {@code KnowledgeArticleProposed} event coming from the ticket service.
+     * Phase 1 of turning a {@code KnowledgeArticleProposed} event into a draft: persist a draft in
+     * {@code PENDING_GENERATION}. The body is produced asynchronously later (see the generation
+     * flow), keeping any external AI call out of the inbox transaction.
      *
-     * <p>Idempotent: a {@code source_ticket_id} has a unique constraint, so if a draft already
-     * exists for the ticket (e.g. the event is redelivered) the existing draft is returned and no
-     * duplicate is created. Only the first proposal for a ticket emits a {@code DraftSaved} event.
+     * <p>The proposal event carries no organization, so it is resolved from the local ticket
+     * conversation projection. If the ticket is unknown locally the proposal is invalid and a
+     * {@code DraftSaveFailed} compensation is emitted instead of creating a draft.
+     *
+     * <p>Idempotent: {@code source_ticket_id} is unique, so a redelivered proposal for an existing
+     * draft is a no-op.
      */
     @Transactional
-    public DraftResponse createDraftFromTicketProposal(KnowledgeArticleProposedPayload payload) {
-        return draftRepository.findWithTagsBySourceTicketId(payload.ticketId())
-                .map(mapper::toDraftResponse)
-                .orElseGet(() -> createNewDraft(payload));
+    public void createDraftFromTicketProposal(KnowledgeArticleProposedPayload payload) {
+        if (draftRepository.findWithTagsBySourceTicketId(payload.ticketId()).isPresent()) {
+            return;
+        }
+
+        var organizationId = ticketConversationProjection.resolveOrganizationId(payload.ticketId()).orElse(null);
+        if (organizationId == null) {
+            eventPublisher.publishKnowledgeArticleDraftSaveFailed(
+                    payload.ticketId(),
+                    null,
+                    DraftSaveFailureCode.INVALID_ARTICLE_PROPOSAL,
+                    "No ticket conversation is known for ticket " + payload.ticketId()
+            );
+            return;
+        }
+
+        var draft = KnowledgeArticleDraftEntity.pendingGeneration(
+                payload.ticketId(),
+                organizationId,
+                payload.proposerId(),
+                payload.proposedSubject(),
+                payload.tags(),
+                clock.instant()
+        );
+        draftRepository.save(draft);
     }
 
     @Transactional(readOnly = true)
@@ -102,10 +131,7 @@ public class KnowledgeDraftService {
         accessPolicy.requireDraftManagement(user, draft.getOrganizationId());
 
         var title = request.title() == null || request.title().isBlank() ? draft.getTitle() : request.title().trim();
-        var content = request.content().trim();
-        if (content.isBlank()) {
-            throw new BusinessValidationException("Article content is required for publication");
-        }
+        var content = resolvePublicationContent(request, draft);
 
         var now = clock.instant();
         draft.publish(title, content, now);
@@ -129,17 +155,18 @@ public class KnowledgeDraftService {
         return mapper.toDraftResponse(draft);
     }
 
-    private DraftResponse createNewDraft(KnowledgeArticleProposedPayload payload) {
-        var draft = KnowledgeArticleDraftEntity.pending(
-                payload.ticketId(),
-                payload.organizationId(),
-                payload.proposerId(),
-                payload.proposedSubject(),
-                payload.tags(),
-                clock.instant()
-        );
-        var saved = draftRepository.save(draft);
-        eventPublisher.publishKnowledgeArticleDraftSaved(saved);
-        return mapper.toDraftResponse(saved);
+    /**
+     * Chooses the body to publish: the manager's edited content when provided, otherwise the
+     * AI-generated draft body. At least one must be non-blank.
+     */
+    private String resolvePublicationContent(PublishDraftRequest request, KnowledgeArticleDraftEntity draft) {
+        if (request.content() != null && !request.content().isBlank()) {
+            return request.content().trim();
+        }
+        var draftContent = draft.getContent();
+        if (draftContent == null || draftContent.isBlank()) {
+            throw new BusinessValidationException("Article content is required for publication");
+        }
+        return draftContent.trim();
     }
 }

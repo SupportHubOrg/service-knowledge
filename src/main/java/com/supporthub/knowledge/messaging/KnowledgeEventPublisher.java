@@ -2,6 +2,7 @@ package com.supporthub.knowledge.messaging;
 
 import com.supporthub.knowledge.article.persistence.KnowledgeArticleEntity;
 import com.supporthub.knowledge.draft.persistence.KnowledgeArticleDraftEntity;
+import com.supporthub.knowledge.messaging.event.DraftSaveFailureCode;
 
 import java.util.UUID;
 
@@ -18,7 +19,7 @@ public interface KnowledgeEventPublisher {
     /** Emitted when a ticket proposal could not be turned into a draft (compensating signal). */
     void publishKnowledgeArticleDraftSaveFailed(UUID sourceTicketId,
                                                 UUID organizationId,
-                                                String failureCode,
+                                                DraftSaveFailureCode failureCode,
                                                 String failureMessage);
 
     /** Emitted when a draft is published as an article; carries the full article content. */

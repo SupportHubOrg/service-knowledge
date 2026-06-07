@@ -49,12 +49,15 @@ class IntegrationEventRegistryTest {
     }
 
     private Map<String, IntegrationEventProperties.ContractProperties> defaultContracts() {
-        return new java.util.HashMap<>(Map.of(
-                "knowledge-article-proposed", contract("KnowledgeArticleProposed"),
-                "knowledge-article-draft-saved", contract("KnowledgeArticleDraftSaved"),
-                "knowledge-article-draft-save-failed", contract("KnowledgeArticleDraftSaveFailed"),
-                "knowledge-article-published", contract("KnowledgeArticlePublished"),
-                "knowledge-article-rejected", contract("KnowledgeArticleRejected")
+        return new java.util.HashMap<>(Map.ofEntries(
+                Map.entry("knowledge-article-proposed", contract("KnowledgeArticleProposed")),
+                Map.entry("ticket-message-added", contract("TicketMessageAdded")),
+                Map.entry("ticket-deleted", contract("TicketDeleted")),
+                Map.entry("organization-deleted", contract("OrganizationDeleted")),
+                Map.entry("knowledge-article-draft-saved", contract("KnowledgeArticleDraftSaved")),
+                Map.entry("knowledge-article-draft-save-failed", contract("KnowledgeArticleDraftSaveFailed")),
+                Map.entry("knowledge-article-published", contract("KnowledgeArticlePublished")),
+                Map.entry("knowledge-article-rejected", contract("KnowledgeArticleRejected"))
         ));
     }
 

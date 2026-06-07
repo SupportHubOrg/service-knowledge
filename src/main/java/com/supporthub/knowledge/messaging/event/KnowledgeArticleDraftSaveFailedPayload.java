@@ -6,7 +6,7 @@ import java.util.UUID;
 public record KnowledgeArticleDraftSaveFailedPayload(
         UUID sourceTicketId,
         UUID organizationId,
-        String failureCode,
+        DraftSaveFailureCode failureCode,
         String failureMessage
 ) {
 }

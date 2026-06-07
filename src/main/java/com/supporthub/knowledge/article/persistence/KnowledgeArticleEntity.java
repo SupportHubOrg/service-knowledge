@@ -112,4 +112,13 @@ public class KnowledgeArticleEntity {
                 .forEach(article.tags::add);
         return article;
     }
+
+    /** Archives the article (e.g. its ticket or organization was deleted). Idempotent. */
+    public void archive(Instant now) {
+        if (status == ArticleStatus.ARCHIVED) {
+            return;
+        }
+        this.status = ArticleStatus.ARCHIVED;
+        this.updatedAt = now;
+    }
 }

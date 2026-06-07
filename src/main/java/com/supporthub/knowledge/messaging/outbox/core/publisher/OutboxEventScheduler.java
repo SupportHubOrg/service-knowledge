@@ -2,11 +2,13 @@ package com.supporthub.knowledge.messaging.outbox.core.publisher;
 
 import lombok.RequiredArgsConstructor;
 import net.javacrumbs.shedlock.spring.annotation.SchedulerLock;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 
 /** Periodically triggers outbox draining. ShedLock keeps only one active publisher in the cluster. */
 @Component
+@ConditionalOnProperty(name = "application.scheduling.enabled", havingValue = "true", matchIfMissing = true)
 @RequiredArgsConstructor
 public class OutboxEventScheduler {
 

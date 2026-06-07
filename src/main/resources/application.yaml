@@ -39,7 +39,7 @@ spring:
         retry.backoff.ms: 1000
     consumer:
       group-id: ${KAFKA_CONSUMER_GROUP:knowledge-management-service}
-      auto-offset-reset: latest
+      auto-offset-reset: earliest
       enable-auto-commit: false
 
 springdoc:
@@ -63,11 +63,25 @@ management:
 application:
   security:
     audience: ${JWT_AUDIENCE:knowledge-management-service}
+  draft-generation:
+    batch-size: ${DRAFT_GENERATION_BATCH_SIZE:20}
+    poll-delay-ms: ${DRAFT_GENERATION_POLL_DELAY_MS:2000}
+    lock-at-most-for: ${DRAFT_GENERATION_LOCK_AT_MOST_FOR:PT2M}
+    lock-at-least-for: ${DRAFT_GENERATION_LOCK_AT_LEAST_FOR:PT0S}
   integration-events:
     contracts:
       knowledge-article-proposed:
         event-type: ${EVENT_KNOWLEDGE_ARTICLE_PROPOSED:KnowledgeArticleProposed}
         version: ${EVENT_KNOWLEDGE_ARTICLE_PROPOSED_VERSION:1}
+      ticket-message-added:
+        event-type: ${EVENT_TICKET_MESSAGE_ADDED:TicketMessageAdded}
+        version: ${EVENT_TICKET_MESSAGE_ADDED_VERSION:1}
+      ticket-deleted:
+        event-type: ${EVENT_TICKET_DELETED:TicketDeleted}
+        version: ${EVENT_TICKET_DELETED_VERSION:1}
+      organization-deleted:
+        event-type: ${EVENT_ORGANIZATION_DELETED:OrganizationDeleted}
+        version: ${EVENT_ORGANIZATION_DELETED_VERSION:1}
       knowledge-article-draft-saved:
         event-type: ${EVENT_KNOWLEDGE_ARTICLE_DRAFT_SAVED:KnowledgeArticleDraftSaved}
         version: ${EVENT_KNOWLEDGE_ARTICLE_DRAFT_SAVED_VERSION:1}
@@ -75,7 +89,9 @@ application:
         event-type: ${EVENT_KNOWLEDGE_ARTICLE_DRAFT_SAVE_FAILED:KnowledgeArticleDraftSaveFailed}
         version: ${EVENT_KNOWLEDGE_ARTICLE_DRAFT_SAVE_FAILED_VERSION:1}
       knowledge-article-published:
-        event-type: ${EVENT_KNOWLEDGE_ARTICLE_PUBLISHED:KnowledgeArticlePublished}
+        # Wire name deviates from docs (KnowledgeArticlePublished): ticket-management consumes
+        # "KnowledgeArticleApproved". Override via env to realign once ticket-management is fixed.
+        event-type: ${EVENT_KNOWLEDGE_ARTICLE_PUBLISHED:KnowledgeArticleApproved}
         version: ${EVENT_KNOWLEDGE_ARTICLE_PUBLISHED_VERSION:1}
       knowledge-article-rejected:
         event-type: ${EVENT_KNOWLEDGE_ARTICLE_REJECTED:KnowledgeArticleRejected}
@@ -83,6 +99,7 @@ application:
   kafka:
     consumer:
       ticket-management-events: ${KAFKA_TOPIC_TICKET_MANAGEMENT_EVENTS:ticket-management-events}
+      organization-access-events: ${KAFKA_TOPIC_ORGANIZATION_ACCESS_EVENTS:organization-access-events}
       concurrency: ${KAFKA_CONSUMER_CONCURRENCY:3}
     producer:
       knowledge-management-events: ${KAFKA_TOPIC_KNOWLEDGE_MANAGEMENT_EVENTS:knowledge-management-events}
@@ -109,8 +126,10 @@ application:
     stuck-timeout: ${OUTBOX_STUCK_TIMEOUT:PT2M}
     routing:
       knowledge:
+        # Keyed by the wire eventType. KnowledgeArticleApproved is the published-article event
+        # (see integration-events.contracts.knowledge-article-published, deviates from docs).
         event-topics:
           KnowledgeArticleDraftSaved: ${KAFKA_TOPIC_KNOWLEDGE_MANAGEMENT_EVENTS:knowledge-management-events}
           KnowledgeArticleDraftSaveFailed: ${KAFKA_TOPIC_KNOWLEDGE_MANAGEMENT_EVENTS:knowledge-management-events}
-          KnowledgeArticlePublished: ${KAFKA_TOPIC_KNOWLEDGE_MANAGEMENT_EVENTS:knowledge-management-events}
+          KnowledgeArticleApproved: ${KAFKA_TOPIC_KNOWLEDGE_MANAGEMENT_EVENTS:knowledge-management-events}
           KnowledgeArticleRejected: ${KAFKA_TOPIC_KNOWLEDGE_MANAGEMENT_EVENTS:knowledge-management-events}

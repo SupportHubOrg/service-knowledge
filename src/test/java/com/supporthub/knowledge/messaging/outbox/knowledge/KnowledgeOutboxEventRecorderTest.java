@@ -25,7 +25,7 @@ class KnowledgeOutboxEventRecorderTest {
     @Test
     void shouldAppendPublishedArticleEventKeyedBySourceTicket() {
         var sourceTicketId = UUID.randomUUID();
-        var draft = KnowledgeArticleDraftEntity.pending(
+        var draft = KnowledgeArticleDraftEntity.pendingGeneration(
                 sourceTicketId,
                 UUID.randomUUID(),
                 UUID.randomUUID(),
@@ -33,6 +33,7 @@ class KnowledgeOutboxEventRecorderTest {
                 List.of(UUID.randomUUID()),
                 Instant.parse("2026-06-01T11:00:00Z")
         );
+        draft.completeGeneration("Generated content", Instant.parse("2026-06-01T11:30:00Z"));
         draft.publish("Article title", "Article content", Instant.parse("2026-06-01T12:00:00Z"));
         var article = KnowledgeArticleEntity.publishFromDraft(
                 draft,

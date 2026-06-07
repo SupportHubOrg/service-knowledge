@@ -1,8 +1,10 @@
 package com.supporthub.knowledge.draft.persistence;
 
 import com.supporthub.knowledge.draft.domain.DraftStatus;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
 
 import java.util.List;
 import java.util.Optional;
@@ -28,4 +30,7 @@ public interface KnowledgeArticleDraftRepository extends JpaRepository<Knowledge
 
     @EntityGraph(attributePaths = "tags")
     List<KnowledgeArticleDraftEntity> findAllByOrderByCreatedAtDesc();
+
+    @Query("select d.id from KnowledgeArticleDraftEntity d where d.status = :status order by d.createdAt asc")
+    List<UUID> findIdsByStatus(DraftStatus status, Pageable pageable);
 }

@@ -1,8 +1,10 @@
 package com.supporthub.knowledge.messaging.inbox;
 
+import com.supporthub.knowledge.messaging.event.TicketMessageAddedPayload;
 import com.supporthub.knowledge.messaging.inbox.core.context.InboxConsumers;
 import com.supporthub.knowledge.messaging.inbox.core.processing.InboxMessageProcessor;
 import com.supporthub.knowledge.support.KnowledgeIntegrationTestSupport;
+import com.supporthub.knowledge.ticket.application.TicketConversationProjection;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -18,11 +20,15 @@ import static org.assertj.core.api.Assertions.assertThat;
 class InboxIntegrationTest extends KnowledgeIntegrationTestSupport {
 
     private final InboxMessageProcessor inboxMessageProcessor;
+    private final TicketConversationProjection ticketConversationProjection;
     private final JdbcTemplate jdbcTemplate;
 
     @Autowired
-    InboxIntegrationTest(InboxMessageProcessor inboxMessageProcessor, JdbcTemplate jdbcTemplate) {
+    InboxIntegrationTest(InboxMessageProcessor inboxMessageProcessor,
+                         TicketConversationProjection ticketConversationProjection,
+                         JdbcTemplate jdbcTemplate) {
         this.inboxMessageProcessor = inboxMessageProcessor;
+        this.ticketConversationProjection = ticketConversationProjection;
         this.jdbcTemplate = jdbcTemplate;
     }
 
@@ -33,12 +39,22 @@ class InboxIntegrationTest extends KnowledgeIntegrationTestSupport {
         jdbcTemplate.update("delete from knowledge_article_tags");
         jdbcTemplate.update("delete from knowledge_articles");
         jdbcTemplate.update("delete from knowledge_article_drafts");
+        jdbcTemplate.update("delete from ticket_conversation_message");
     }
 
     @Test
     void shouldStoreInboxMetadataAndSkipDuplicateEventId() {
         var eventId = UUID.fromString("6cf547c2-8b4c-4d92-944a-79e4f1d801c9");
         var ticketId = UUID.fromString("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa");
+        // Seed the conversation projection so the proposal can resolve the organization and create a draft.
+        ticketConversationProjection.project(new TicketMessageAddedPayload(
+                ticketId,
+                UUID.fromString("bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb"),
+                UUID.randomUUID(),
+                UUID.randomUUID(),
+                "Operator",
+                "Reset the token from the portal."
+        ));
         var firstRecord = new ConsumerRecord<>(
                 TICKET_EVENTS_TOPIC,
                 0,
@@ -92,7 +108,7 @@ class InboxIntegrationTest extends KnowledgeIntegrationTestSupport {
                   },
                   "payload": {
                     "ticketId": "%s",
-                    "organizationId": "bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb",
+                    "operatorId": "bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb",
                     "proposerId": "cccccccc-cccc-cccc-cccc-cccccccccccc",
                     "proposedSubject": "Plan zajec issue",
                     "tags": ["dddddddd-dddd-dddd-dddd-dddddddddddd"]

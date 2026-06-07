@@ -1,15 +1,18 @@
 package com.supporthub.knowledge.messaging.outbox;
 
 import com.supporthub.knowledge.article.api.ArticleResponse;
-import com.supporthub.knowledge.draft.api.DraftResponse;
 import com.supporthub.knowledge.draft.api.PublishDraftRequest;
+import com.supporthub.knowledge.draft.application.DraftContentGenerationService;
 import com.supporthub.knowledge.draft.application.KnowledgeDraftService;
+import com.supporthub.knowledge.draft.persistence.KnowledgeArticleDraftRepository;
 import com.supporthub.knowledge.messaging.event.KnowledgeArticleProposedPayload;
+import com.supporthub.knowledge.messaging.event.TicketMessageAddedPayload;
 import com.supporthub.knowledge.messaging.outbox.core.persistence.OutboxEventStatus;
 import com.supporthub.knowledge.messaging.outbox.core.publisher.OutboxEventPublisher;
 import com.supporthub.knowledge.security.CurrentUser;
 import com.supporthub.knowledge.security.SupportHubRole;
 import com.supporthub.knowledge.support.KnowledgeIntegrationTestSupport;
+import com.supporthub.knowledge.ticket.application.TicketConversationProjection;
 import org.apache.kafka.clients.consumer.ConsumerConfig;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.apache.kafka.clients.consumer.KafkaConsumer;
@@ -34,19 +37,28 @@ import static org.assertj.core.api.Assertions.assertThat;
 class OutboxKafkaIntegrationTest extends KnowledgeIntegrationTestSupport {
 
     private static final String DRAFT_SAVED_EVENT = "KnowledgeArticleDraftSaved";
-    private static final String ARTICLE_PUBLISHED_EVENT = "KnowledgeArticlePublished";
+    private static final String ARTICLE_APPROVED_EVENT = "KnowledgeArticleApproved";
 
     private final KnowledgeDraftService draftService;
+    private final DraftContentGenerationService generationService;
+    private final TicketConversationProjection ticketConversationProjection;
+    private final KnowledgeArticleDraftRepository draftRepository;
     private final OutboxEventPublisher outboxPublisher;
     private final JdbcTemplate jdbcTemplate;
     private final ObjectMapper objectMapper;
 
     @Autowired
     OutboxKafkaIntegrationTest(KnowledgeDraftService draftService,
+                               DraftContentGenerationService generationService,
+                               TicketConversationProjection ticketConversationProjection,
+                               KnowledgeArticleDraftRepository draftRepository,
                                OutboxEventPublisher outboxPublisher,
                                JdbcTemplate jdbcTemplate,
                                ObjectMapper objectMapper) {
         this.draftService = draftService;
+        this.generationService = generationService;
+        this.ticketConversationProjection = ticketConversationProjection;
+        this.draftRepository = draftRepository;
         this.outboxPublisher = outboxPublisher;
         this.jdbcTemplate = jdbcTemplate;
         this.objectMapper = objectMapper;
@@ -58,6 +70,7 @@ class OutboxKafkaIntegrationTest extends KnowledgeIntegrationTestSupport {
         jdbcTemplate.update("delete from knowledge_article_tags");
         jdbcTemplate.update("delete from knowledge_articles");
         jdbcTemplate.update("delete from knowledge_article_drafts");
+        jdbcTemplate.update("delete from ticket_conversation_message");
     }
 
     @Test
@@ -79,7 +92,7 @@ class OutboxKafkaIntegrationTest extends KnowledgeIntegrationTestSupport {
             outboxPublisher.publishPendingEvents();
 
             var secondBatch = pollRecords(consumer, 1);
-            assertPublishedEvent(secondBatch.get(0), firstTicketDraftRecord, data, publishedDraft);
+            assertApprovedEvent(secondBatch.get(0), firstTicketDraftRecord, data, publishedDraft);
             assertAllOutboxRowsSent();
         }
     }
@@ -96,31 +109,50 @@ class OutboxKafkaIntegrationTest extends KnowledgeIntegrationTestSupport {
     }
 
     private PublishedDraft createDraftsAndPublishFirst(TestData data) {
+        seedConversation(data.firstTicketId(), data.organizationId());
+        seedConversation(data.secondTicketId(), data.organizationId());
+
+        draftService.createDraftFromTicketProposal(new KnowledgeArticleProposedPayload(
+                data.firstTicketId(),
+                UUID.randomUUID(),
+                UUID.randomUUID(),
+                "Reset VPN token",
+                List.of(data.firstTagId())
+        ));
+        draftService.createDraftFromTicketProposal(new KnowledgeArticleProposedPayload(
+                data.secondTicketId(),
+                UUID.randomUUID(),
+                UUID.randomUUID(),
+                "Configure mailbox forwarding",
+                List.of(data.secondTagId())
+        ));
+
+        // Phase 2: generate bodies, which emits the DraftSaved events into the outbox.
+        generationService.generatePendingDrafts();
+
+        var firstDraftId = draftRepository.findWithTagsBySourceTicketId(data.firstTicketId()).orElseThrow().getId();
         var manager = new CurrentUser(
                 data.managerId(),
                 data.organizationId(),
                 Set.of(SupportHubRole.ORGANIZATION_MANAGER)
         );
-        var firstDraft = draftService.createDraftFromTicketProposal(new KnowledgeArticleProposedPayload(
-                data.firstTicketId(),
-                data.organizationId(),
-                UUID.randomUUID(),
-                "Reset VPN token",
-                List.of(data.firstTagId())
-        ));
         var publishedArticle = draftService.publishDraft(
                 manager,
-                firstDraft.id(),
+                firstDraftId,
                 new PublishDraftRequest("Reset VPN token", "Open the portal and reset the token.")
         );
-        draftService.createDraftFromTicketProposal(new KnowledgeArticleProposedPayload(
-                data.secondTicketId(),
-                data.organizationId(),
+        return new PublishedDraft(firstDraftId, publishedArticle);
+    }
+
+    private void seedConversation(UUID ticketId, UUID organizationId) {
+        ticketConversationProjection.project(new TicketMessageAddedPayload(
+                ticketId,
+                organizationId,
                 UUID.randomUUID(),
-                "Configure mailbox forwarding",
-                List.of(data.secondTagId())
+                UUID.randomUUID(),
+                "Operator",
+                "Resolution conversation for ticket " + ticketId
         ));
-        return new PublishedDraft(firstDraft, publishedArticle);
     }
 
     private void assertInitialOutboxRows() {
@@ -130,8 +162,8 @@ class OutboxKafkaIntegrationTest extends KnowledgeIntegrationTestSupport {
                 .extracting(row -> row.get("event_type"))
                 .containsExactly(
                         DRAFT_SAVED_EVENT,
-                        ARTICLE_PUBLISHED_EVENT,
-                        DRAFT_SAVED_EVENT
+                        DRAFT_SAVED_EVENT,
+                        ARTICLE_APPROVED_EVENT
                 );
     }
 
@@ -142,7 +174,7 @@ class OutboxKafkaIntegrationTest extends KnowledgeIntegrationTestSupport {
         assertThat(outboxStatusCount(OutboxEventStatus.PENDING)).isEqualTo(1);
 
         var firstTicketDraftRecord = consumerRecordByKey(firstBatch, data.firstTicketId().toString());
-        assertDraftSavedEvent(firstTicketDraftRecord, data, publishedDraft.firstDraft());
+        assertDraftSavedEvent(firstTicketDraftRecord, data, publishedDraft.firstDraftId());
 
         var secondTicketDraftRecord = consumerRecordByKey(firstBatch, data.secondTicketId().toString());
         var secondDraftSaved = assertEnvelope(secondTicketDraftRecord, DRAFT_SAVED_EVENT);
@@ -154,9 +186,9 @@ class OutboxKafkaIntegrationTest extends KnowledgeIntegrationTestSupport {
 
     private void assertDraftSavedEvent(ConsumerRecord<String, String> consumerRecord,
                                        TestData data,
-                                       DraftResponse firstDraft) throws Exception {
+                                       UUID firstDraftId) throws Exception {
         var draftSaved = assertEnvelope(consumerRecord, DRAFT_SAVED_EVENT);
-        assertThat(draftSaved.path("payload").path("draftId").asString()).isEqualTo(firstDraft.id().toString());
+        assertThat(draftSaved.path("payload").path("draftId").asString()).isEqualTo(firstDraftId.toString());
         assertThat(draftSaved.path("payload").path("sourceTicketId").asString())
                 .isEqualTo(data.firstTicketId().toString());
         assertThat(draftSaved.path("payload").path("organizationId").asString())
@@ -165,23 +197,23 @@ class OutboxKafkaIntegrationTest extends KnowledgeIntegrationTestSupport {
         assertThat(draftSaved.path("payload").path("tags")).hasSize(1);
     }
 
-    private void assertPublishedEvent(ConsumerRecord<String, String> consumerRecord,
-                                      ConsumerRecord<String, String> firstTicketDraftRecord,
-                                      TestData data,
-                                      PublishedDraft publishedDraft) throws Exception {
-        var articlePublished = assertEnvelope(consumerRecord, ARTICLE_PUBLISHED_EVENT);
+    private void assertApprovedEvent(ConsumerRecord<String, String> consumerRecord,
+                                     ConsumerRecord<String, String> firstTicketDraftRecord,
+                                     TestData data,
+                                     PublishedDraft publishedDraft) throws Exception {
+        var articleApproved = assertEnvelope(consumerRecord, ARTICLE_APPROVED_EVENT);
         assertThat(consumerRecord.key()).isEqualTo(data.firstTicketId().toString());
         assertThat(consumerRecord.partition()).isEqualTo(firstTicketDraftRecord.partition());
         assertThat(consumerRecord.offset()).isGreaterThan(firstTicketDraftRecord.offset());
-        assertThat(articlePublished.path("payload").path("articleId").asString())
+        assertThat(articleApproved.path("payload").path("articleId").asString())
                 .isEqualTo(publishedDraft.publishedArticle().id().toString());
-        assertThat(articlePublished.path("payload").path("draftId").asString())
-                .isEqualTo(publishedDraft.firstDraft().id().toString());
-        assertThat(articlePublished.path("payload").path("sourceTicketId").asString())
+        assertThat(articleApproved.path("payload").path("draftId").asString())
+                .isEqualTo(publishedDraft.firstDraftId().toString());
+        assertThat(articleApproved.path("payload").path("sourceTicketId").asString())
                 .isEqualTo(data.firstTicketId().toString());
-        assertThat(articlePublished.path("payload").path("publishedById").asString())
+        assertThat(articleApproved.path("payload").path("publishedById").asString())
                 .isEqualTo(data.managerId().toString());
-        assertThat(articlePublished.path("payload").path("articleContent").asString())
+        assertThat(articleApproved.path("payload").path("articleContent").asString())
                 .isEqualTo("Open the portal and reset the token.");
     }
 
@@ -293,7 +325,7 @@ class OutboxKafkaIntegrationTest extends KnowledgeIntegrationTestSupport {
     }
 
     private record PublishedDraft(
-            DraftResponse firstDraft,
+            UUID firstDraftId,
             ArticleResponse publishedArticle
     ) {
     }

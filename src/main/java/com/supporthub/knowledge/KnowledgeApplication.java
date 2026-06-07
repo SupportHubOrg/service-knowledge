@@ -1,5 +1,6 @@
 package com.supporthub.knowledge;
 
+import com.supporthub.knowledge.draft.application.DraftGenerationProperties;
 import com.supporthub.knowledge.messaging.config.KafkaDltProperties;
 import com.supporthub.knowledge.messaging.config.KafkaTopicProvisioningProperties;
 import com.supporthub.knowledge.messaging.event.IntegrationEventProperties;
@@ -19,7 +20,8 @@ import org.springframework.scheduling.annotation.EnableScheduling;
         KafkaTopicProvisioningProperties.class,
         IntegrationEventProperties.class,
         OutboxProperties.class,
-        KnowledgeOutboxRoutingProperties.class
+        KnowledgeOutboxRoutingProperties.class,
+        DraftGenerationProperties.class
 })
 public class KnowledgeApplication {
 

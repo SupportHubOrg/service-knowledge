@@ -41,7 +41,7 @@ class InboxMessageProcessorTest {
         registerHandler(true);
         when(eventStore.insertIfNew(any())).thenReturn(true);
 
-        processor.process(CONSUMER, record(envelope("KnowledgeArticleProposed")));
+        processor.process(CONSUMER, kafkaRecord(envelope("KnowledgeArticleProposed")));
 
         assertThat(handler.payload.proposedSubject()).isEqualTo("Plan zajec issue");
         assertThat(handler.context.eventType()).isEqualTo("KnowledgeArticleProposed");
@@ -53,7 +53,7 @@ class InboxMessageProcessorTest {
         registerHandler(false);
         when(eventStore.insertIfNew(any())).thenReturn(false);
 
-        processor.process(CONSUMER, record(envelope("KnowledgeArticleProposed")));
+        processor.process(CONSUMER, kafkaRecord(envelope("KnowledgeArticleProposed")));
 
         assertThat(handler.payload).isNull();
         verify(eventStore).insertIfNew(any());
@@ -62,14 +62,17 @@ class InboxMessageProcessorTest {
     @Test
     void shouldRejectUnknownEventTypeAsNonRetryable() {
         when(eventStore.insertIfNew(any())).thenReturn(true);
+        var kafkaRecord = kafkaRecord(envelope("TicketCreated"));
 
-        assertThatThrownBy(() -> processor.process(CONSUMER, record(envelope("TicketCreated"))))
+        assertThatThrownBy(() -> processor.process(CONSUMER, kafkaRecord))
                 .isInstanceOf(NonRetryableKafkaProcessingException.class);
     }
 
     @Test
     void shouldRejectMalformedEnvelopeAsNonRetryable() {
-        assertThatThrownBy(() -> processor.process(CONSUMER, record("{\"payload\": {}}")))
+        var kafkaRecord = kafkaRecord("{\"payload\": {}}");
+
+        assertThatThrownBy(() -> processor.process(CONSUMER, kafkaRecord))
                 .isInstanceOf(NonRetryableKafkaProcessingException.class);
 
         verify(eventStore, never()).insertIfNew(any());
@@ -92,7 +95,7 @@ class InboxMessageProcessorTest {
         ));
     }
 
-    private ConsumerRecord<String, String> record(String value) {
+    private ConsumerRecord<String, String> kafkaRecord(String value) {
         return new ConsumerRecord<>("ticket-management-events", 0, 1L, "key", value);
     }
 
@@ -108,7 +111,7 @@ class InboxMessageProcessorTest {
                   },
                   "payload": {
                     "ticketId": "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa",
-                    "organizationId": "bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb",
+                    "operatorId": "bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb",
                     "proposerId": "cccccccc-cccc-cccc-cccc-cccccccccccc",
                     "proposedSubject": "Plan zajec issue",
                     "tags": ["dddddddd-dddd-dddd-dddd-dddddddddddd"]

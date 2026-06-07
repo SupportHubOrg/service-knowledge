@@ -3,6 +3,7 @@ package com.supporthub.knowledge.messaging.outbox.knowledge;
 import com.supporthub.knowledge.article.persistence.KnowledgeArticleEntity;
 import com.supporthub.knowledge.draft.persistence.KnowledgeArticleDraftEntity;
 import com.supporthub.knowledge.messaging.KnowledgeEventPublisher;
+import com.supporthub.knowledge.messaging.event.DraftSaveFailureCode;
 import com.supporthub.knowledge.messaging.outbox.core.persistence.OutboxEventWriter;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
@@ -28,7 +29,7 @@ public class KnowledgeOutboxEventRecorder implements KnowledgeEventPublisher {
     @Override
     public void publishKnowledgeArticleDraftSaveFailed(UUID sourceTicketId,
                                                        UUID organizationId,
-                                                       String failureCode,
+                                                       DraftSaveFailureCode failureCode,
                                                        String failureMessage) {
         eventWriter.append(
                 sourceTicketId.toString(),

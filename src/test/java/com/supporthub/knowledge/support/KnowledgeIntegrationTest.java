@@ -27,6 +27,10 @@ import java.lang.annotation.Target;
         "application.outbox.retry-backoff=PT1S",
         "application.outbox.max-retry-backoff=PT5S",
         "application.outbox.stuck-timeout=PT1M",
+        "application.draft-generation.batch-size=50",
+        "application.draft-generation.poll-delay-ms=600000",
+        "application.draft-generation.lock-at-most-for=PT30S",
+        "application.draft-generation.lock-at-least-for=PT0S",
         "application.kafka.topics.defaults.partitions=3",
         "application.kafka.topics.defaults.replicas=1",
         "application.kafka.topics.defaults.min-in-sync-replicas=1"
