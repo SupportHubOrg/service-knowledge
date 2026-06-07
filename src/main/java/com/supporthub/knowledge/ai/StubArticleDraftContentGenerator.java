@@ -1,6 +1,7 @@
 package com.supporthub.knowledge.ai;
 
 import org.springframework.stereotype.Component;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 
 import java.util.stream.Collectors;
 
@@ -11,6 +12,8 @@ import java.util.stream.Collectors;
  * <p>Keep this class as a local fallback/test double when no LLM-backed adapter is configured.
  */
 @Component
+@ConditionalOnProperty(prefix = "application.ai.article-generation", name = "provider", havingValue = "stub",
+        matchIfMissing = true)
 public class StubArticleDraftContentGenerator implements ArticleDraftContentGenerator {
 
     @Override

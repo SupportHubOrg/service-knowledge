@@ -4,6 +4,13 @@ server:
 spring:
   application:
     name: knowledge-management-service
+  ai:
+    model:
+      chat: ${SPRING_AI_CHAT_MODEL:none}
+      embedding: ${SPRING_AI_EMBEDDING_MODEL:none}
+      image: ${SPRING_AI_IMAGE_MODEL:none}
+    openai-sdk:
+      api-key: ${OPENAI_API_KEY:}
   datasource:
     url: ${DB_URL:jdbc:postgresql://localhost:5432/knowledge}
     username: ${DB_USERNAME:knowledge}
@@ -68,6 +75,16 @@ application:
     poll-delay-ms: ${DRAFT_GENERATION_POLL_DELAY_MS:2000}
     lock-at-most-for: ${DRAFT_GENERATION_LOCK_AT_MOST_FOR:PT2M}
     lock-at-least-for: ${DRAFT_GENERATION_LOCK_AT_LEAST_FOR:PT0S}
+  ai:
+    article-generation:
+      provider: ${ARTICLE_GENERATION_PROVIDER:openai}
+      model: ${ARTICLE_GENERATION_MODEL:gpt-5.4-mini}
+      max-output-tokens: ${ARTICLE_GENERATION_MAX_OUTPUT_TOKENS:2500}
+      minimum-content-length: ${ARTICLE_GENERATION_MIN_CONTENT_LENGTH:120}
+      maximum-content-length: ${ARTICLE_GENERATION_MAX_CONTENT_LENGTH:16000}
+      insufficient-information-marker: ${ARTICLE_GENERATION_INSUFFICIENT_MARKER:INSUFFICIENT_INFORMATION}
+      safe-logging-enabled: ${ARTICLE_GENERATION_SAFE_LOGGING_ENABLED:true}
+      safe-guard-enabled: ${ARTICLE_GENERATION_SAFE_GUARD_ENABLED:false}
   integration-events:
     contracts:
       knowledge-article-proposed:
