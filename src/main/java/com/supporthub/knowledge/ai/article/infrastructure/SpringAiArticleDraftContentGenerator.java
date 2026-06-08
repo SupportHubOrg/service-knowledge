@@ -1,15 +1,10 @@
 package com.supporthub.knowledge.ai.article.infrastructure;
 
-import com.supporthub.knowledge.draft.application.GeneratedArticleContent;
-
-import com.supporthub.knowledge.draft.application.ArticleGenerationException;
-
-import com.supporthub.knowledge.draft.application.ArticleGenerationContext;
-
-import com.supporthub.knowledge.draft.application.ArticleDraftContentGenerator;
-
 import com.supporthub.knowledge.ai.common.SafeAiLoggingAdvisor;
-
+import com.supporthub.knowledge.draft.application.ArticleDraftContentGenerator;
+import com.supporthub.knowledge.draft.application.ArticleGenerationContext;
+import com.supporthub.knowledge.draft.application.ArticleGenerationException;
+import com.supporthub.knowledge.draft.application.GeneratedArticleContent;
 import lombok.RequiredArgsConstructor;
 import org.springframework.ai.chat.client.ChatClient;
 import org.springframework.ai.openaisdk.OpenAiSdkChatOptions;
@@ -48,14 +43,14 @@ public class SpringAiArticleDraftContentGenerator implements ArticleDraftContent
             Create a knowledge base article from the following resolved support ticket.
 
             Proposed article title:
-            %s
+            {proposedSubject}
 
             Ticket conversation:
-            %s
+            {conversation}
 
             Required article format:
 
-            # %s
+            # {proposedSubject}
 
             ## Problem
             Describe the user-visible problem in 1-3 sentences.
@@ -91,7 +86,9 @@ public class SpringAiArticleDraftContentGenerator implements ArticleDraftContent
 
         var content = articleDraftChatClient.prompt()
                 .system(SYSTEM_PROMPT)
-                .user(userPrompt(context))
+                .user(user -> user.text(USER_PROMPT_TEMPLATE)
+                        .param("proposedSubject", context.proposedSubject())
+                        .param("conversation", conversation(context)))
                 .options(chatOptions())
                 .advisors(advisor -> advisor.params(advisorContext(context)))
                 .call()
@@ -114,14 +111,6 @@ public class SpringAiArticleDraftContentGenerator implements ArticleDraftContent
                 SafeAiLoggingAdvisor.CONTEXT_TICKET_ID, context.ticketId(),
                 SafeAiLoggingAdvisor.CONTEXT_ORGANIZATION_ID, context.organizationId(),
                 SafeAiLoggingAdvisor.CONTEXT_MODEL, properties.model()
-        );
-    }
-
-    private String userPrompt(ArticleGenerationContext context) {
-        return USER_PROMPT_TEMPLATE.formatted(
-                context.proposedSubject(),
-                conversation(context),
-                context.proposedSubject()
         );
     }
 
