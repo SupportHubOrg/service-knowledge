@@ -129,7 +129,7 @@ application:
       organization-access-events: ${KAFKA_TOPIC_ORGANIZATION_ACCESS_EVENTS:organization-access-events}
       concurrency: ${KAFKA_CONSUMER_CONCURRENCY:3}
     producer:
-      knowledge-management-events: ${KAFKA_TOPIC_KNOWLEDGE_MANAGEMENT_EVENTS:knowledge-management-events}
+      knowledge-management-events: ${KAFKA_TOPIC_KNOWLEDGE_MANAGEMENT_EVENTS:knowledge-base-events}
     dlt:
       name: ${KAFKA_TOPIC_KNOWLEDGE_MANAGEMENT_DLT:knowledge-base-events-dlt}
       backoff-ms: ${KAFKA_DLT_BACKOFF_MS:1000}
@@ -140,7 +140,7 @@ application:
         replicas: ${KAFKA_TOPIC_REPLICAS:1}
         min-in-sync-replicas: ${KAFKA_TOPIC_MIN_ISR:1}
       owned:
-        knowledge-management-events: ${KAFKA_TOPIC_KNOWLEDGE_MANAGEMENT_EVENTS:knowledge-management-events}
+        knowledge-management-events: ${KAFKA_TOPIC_KNOWLEDGE_MANAGEMENT_EVENTS:knowledge-base-events}
         knowledge-base-events-dlt: ${KAFKA_TOPIC_KNOWLEDGE_MANAGEMENT_DLT:knowledge-base-events-dlt}
   outbox:
     batch-size: ${OUTBOX_BATCH_SIZE:50}
@@ -155,7 +155,7 @@ application:
       knowledge:
         # Keyed by the wire eventType.
         event-topics:
-          KnowledgeArticleDraftSaved: ${KAFKA_TOPIC_KNOWLEDGE_MANAGEMENT_EVENTS:knowledge-management-events}
-          KnowledgeArticleDraftSaveFailed: ${KAFKA_TOPIC_KNOWLEDGE_MANAGEMENT_EVENTS:knowledge-management-events}
-          KnowledgeArticleApproved: ${KAFKA_TOPIC_KNOWLEDGE_MANAGEMENT_EVENTS:knowledge-management-events}
-          KnowledgeArticleRejected: ${KAFKA_TOPIC_KNOWLEDGE_MANAGEMENT_EVENTS:knowledge-management-events}
+          KnowledgeArticleDraftSaved: ${KAFKA_TOPIC_KNOWLEDGE_MANAGEMENT_EVENTS:knowledge-base-events}
+          KnowledgeArticleDraftSaveFailed: ${KAFKA_TOPIC_KNOWLEDGE_MANAGEMENT_EVENTS:knowledge-base-events}
+          KnowledgeArticleApproved: ${KAFKA_TOPIC_KNOWLEDGE_MANAGEMENT_EVENTS:knowledge-base-events}
+          KnowledgeArticleRejected: ${KAFKA_TOPIC_KNOWLEDGE_MANAGEMENT_EVENTS:knowledge-base-events}
