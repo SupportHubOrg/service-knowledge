@@ -13,9 +13,12 @@ import com.supporthub.knowledge.messaging.event.KnowledgeArticlePublishedPayload
 import com.supporthub.knowledge.messaging.event.KnowledgeArticleRejectedPayload;
 import com.supporthub.knowledge.shared.content.ArticleContentConverter;
 import com.supporthub.knowledge.shared.content.ArticleTitleConverter;
+import com.supporthub.knowledge.shared.identity.OrganizationId;
 import com.supporthub.knowledge.shared.identity.OrganizationIdConverter;
 import com.supporthub.knowledge.shared.identity.TagIdConverter;
+import com.supporthub.knowledge.shared.identity.TicketId;
 import com.supporthub.knowledge.shared.identity.TicketIdConverter;
+import com.supporthub.knowledge.shared.identity.UserId;
 import com.supporthub.knowledge.shared.identity.UserIdConverter;
 import org.springframework.stereotype.Component;
 
@@ -35,13 +38,13 @@ public class KnowledgeOutboxPayloadFactory {
         );
     }
 
-    public KnowledgeArticleDraftSaveFailedPayload draftSaveFailed(UUID sourceTicketId,
-                                                                  UUID organizationId,
+    public KnowledgeArticleDraftSaveFailedPayload draftSaveFailed(TicketId sourceTicketId,
+                                                                  OrganizationId organizationId,
                                                                   DraftSaveFailureCode failureCode,
                                                                   String failureMessage) {
         return new KnowledgeArticleDraftSaveFailedPayload(
-                sourceTicketId,
-                organizationId,
+                TicketIdConverter.toRaw(sourceTicketId),
+                OrganizationIdConverter.toRaw(organizationId),
                 failureCode,
                 failureMessage
         );
@@ -60,7 +63,7 @@ public class KnowledgeOutboxPayloadFactory {
         );
     }
 
-    public KnowledgeArticleRejectedPayload articleRejected(KnowledgeArticleDraftEntity draft, UUID rejectedById) {
+    public KnowledgeArticleRejectedPayload articleRejected(KnowledgeArticleDraftEntity draft, UserId rejectedById) {
         String rejectionReason;
         if (draft.getRejectionReason() == null) {
             rejectionReason = null;
@@ -71,7 +74,7 @@ public class KnowledgeOutboxPayloadFactory {
                 DraftIds.toRaw(draft.getId()),
                 TicketIdConverter.toRaw(draft.getSourceTicketId()),
                 OrganizationIdConverter.toRaw(draft.getOrganizationId()),
-                rejectedById,
+                UserIdConverter.toRaw(rejectedById),
                 rejectionReason
         );
     }

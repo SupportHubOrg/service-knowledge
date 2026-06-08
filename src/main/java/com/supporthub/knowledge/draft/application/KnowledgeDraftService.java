@@ -82,7 +82,7 @@ public class KnowledgeDraftService {
         var organizationId = ticketConversationProjection.resolveOrganizationId(payload.ticketId()).orElse(null);
         if (organizationId == null) {
             eventPublisher.publishKnowledgeArticleDraftSaveFailed(
-                    payload.ticketId(),
+                    TicketId.of(payload.ticketId()),
                     null,
                     DraftSaveFailureCode.INVALID_ARTICLE_PROPOSAL,
                     "No ticket conversation is known for ticket " + payload.ticketId()
@@ -158,7 +158,7 @@ public class KnowledgeDraftService {
         accessPolicy.requireDraftManagement(user, draft.getOrganizationId());
         var rejectedAt = clock.instant();
         draft.reject(RejectionReason.of(request.rejectionReason().trim()), rejectedAt);
-        eventPublisher.publishKnowledgeArticleRejected(draft, user.userId());
+        eventPublisher.publishKnowledgeArticleRejected(draft, UserId.of(user.userId()));
         return mapper.toDraftResponse(draft);
     }
 

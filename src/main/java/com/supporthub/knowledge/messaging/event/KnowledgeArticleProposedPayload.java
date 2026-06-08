@@ -1,5 +1,7 @@
 package com.supporthub.knowledge.messaging.event;
 
+import com.supporthub.knowledge.messaging.event.annotation.IntegrationEvent;
+
 import java.util.List;
 import java.util.UUID;
 

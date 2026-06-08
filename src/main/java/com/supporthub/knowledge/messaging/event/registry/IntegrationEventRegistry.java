@@ -1,5 +1,6 @@
-package com.supporthub.knowledge.messaging.event;
+package com.supporthub.knowledge.messaging.event.registry;
 
+import com.supporthub.knowledge.messaging.event.annotation.IntegrationEvent;
 import jakarta.annotation.PostConstruct;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.config.BeanDefinition;
@@ -77,7 +78,7 @@ public class IntegrationEventRegistry {
 
         return scanner.findCandidateComponents(EVENT_PAYLOAD_PACKAGE)
                 .stream()
-                .map(this::loadClass)
+                .<Class<?>>map(this::loadClass)
                 .sorted(Comparator.comparing(Class::getName))
                 .toList();
     }

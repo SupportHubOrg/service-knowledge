@@ -1,4 +1,4 @@
-package com.supporthub.knowledge.messaging.event;
+package com.supporthub.knowledge.messaging.event.registry;
 
 public class IntegrationEventConfigurationException extends RuntimeException {
 

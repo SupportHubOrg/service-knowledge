@@ -45,13 +45,13 @@ public abstract class KnowledgeIntegrationTestSupport {
         registry.add("application.kafka.dlt.name", () -> KNOWLEDGE_EVENTS_DLT_TOPIC);
         registry.add("application.kafka.topics.owned.knowledge-management-events", () -> KNOWLEDGE_EVENTS_TOPIC);
         registry.add("application.kafka.topics.owned.knowledge-base-events-dlt", () -> KNOWLEDGE_EVENTS_DLT_TOPIC);
-        registry.add("application.outbox.routing.knowledge.event-topics.KnowledgeArticleDraftSaved",
+        registry.add("application.outbox.routing.knowledge.event-topics.knowledge-article-draft-saved",
                 () -> KNOWLEDGE_EVENTS_TOPIC);
-        registry.add("application.outbox.routing.knowledge.event-topics.KnowledgeArticleDraftSaveFailed",
+        registry.add("application.outbox.routing.knowledge.event-topics.knowledge-article-draft-save-failed",
                 () -> KNOWLEDGE_EVENTS_TOPIC);
-        registry.add("application.outbox.routing.knowledge.event-topics.KnowledgeArticleApproved",
+        registry.add("application.outbox.routing.knowledge.event-topics.knowledge-article-published",
                 () -> KNOWLEDGE_EVENTS_TOPIC);
-        registry.add("application.outbox.routing.knowledge.event-topics.KnowledgeArticleRejected",
+        registry.add("application.outbox.routing.knowledge.event-topics.knowledge-article-rejected",
                 () -> KNOWLEDGE_EVENTS_TOPIC);
     }
 

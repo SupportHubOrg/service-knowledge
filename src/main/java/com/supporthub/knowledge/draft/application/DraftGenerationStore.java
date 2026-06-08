@@ -69,8 +69,8 @@ public class DraftGenerationStore {
                     var generationFailedAt = clock.instant();
                     draft.failGeneration(generationFailedAt);
                     eventPublisher.publishKnowledgeArticleDraftSaveFailed(
-                            TicketIdConverter.toRaw(draft.getSourceTicketId()),
-                            OrganizationIdConverter.toRaw(draft.getOrganizationId()),
+                            draft.getSourceTicketId(),
+                            draft.getOrganizationId(),
                             failureCode,
                             failureMessage
                     );

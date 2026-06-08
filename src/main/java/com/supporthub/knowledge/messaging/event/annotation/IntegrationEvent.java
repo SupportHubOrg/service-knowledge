@@ -1,4 +1,4 @@
-package com.supporthub.knowledge.messaging.event;
+package com.supporthub.knowledge.messaging.event.annotation;
 
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;

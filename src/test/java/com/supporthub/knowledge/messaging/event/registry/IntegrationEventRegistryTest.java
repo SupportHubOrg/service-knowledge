@@ -1,5 +1,6 @@
-package com.supporthub.knowledge.messaging.event;
+package com.supporthub.knowledge.messaging.event.registry;
 
+import com.supporthub.knowledge.messaging.event.KnowledgeArticlePublishedPayload;
 import org.junit.jupiter.api.Test;
 
 import java.util.Map;

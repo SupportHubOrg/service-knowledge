@@ -1,4 +1,4 @@
-package com.supporthub.knowledge.messaging.event;
+package com.supporthub.knowledge.messaging.event.registry;
 
 public record IntegrationEventContract(
         String key,

@@ -1,8 +1,8 @@
 package com.supporthub.knowledge.messaging.inbox.core.handler;
 
-import com.supporthub.knowledge.messaging.event.IntegrationEventConfigurationException;
-import com.supporthub.knowledge.messaging.event.IntegrationEventContract;
-import com.supporthub.knowledge.messaging.event.IntegrationEventRegistry;
+import com.supporthub.knowledge.messaging.event.registry.IntegrationEventConfigurationException;
+import com.supporthub.knowledge.messaging.event.registry.IntegrationEventContract;
+import com.supporthub.knowledge.messaging.event.registry.IntegrationEventRegistry;
 import com.supporthub.knowledge.messaging.inbox.core.annotation.InboxConsumer;
 import com.supporthub.knowledge.messaging.inbox.core.annotation.InboxHandler;
 import com.supporthub.knowledge.messaging.inbox.core.context.InboxEventContext;

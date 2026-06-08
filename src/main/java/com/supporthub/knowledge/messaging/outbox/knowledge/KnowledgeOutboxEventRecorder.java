@@ -5,15 +5,16 @@ import com.supporthub.knowledge.draft.persistence.KnowledgeArticleDraftEntity;
 import com.supporthub.knowledge.messaging.KnowledgeEventPublisher;
 import com.supporthub.knowledge.messaging.event.DraftSaveFailureCode;
 import com.supporthub.knowledge.messaging.outbox.core.persistence.OutboxEventWriter;
-import com.supporthub.knowledge.shared.identity.TicketIdConverter;
+import com.supporthub.knowledge.shared.identity.OrganizationId;
+import com.supporthub.knowledge.shared.identity.TicketId;
+import com.supporthub.knowledge.shared.identity.UserId;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 
-import java.util.UUID;
-
 /**
  * Domain-facing implementation of {@link KnowledgeEventPublisher}. It records events into the
- * outbox; delivery to Kafka is handled later by the outbox publisher.
+ * outbox; delivery to Kafka is handled later by the outbox publisher. The Kafka message key is
+ * derived from each payload's {@code @MessageKey} component by the outbox writer.
  */
 @Component
 @RequiredArgsConstructor
@@ -24,27 +25,24 @@ public class KnowledgeOutboxEventRecorder implements KnowledgeEventPublisher {
 
     @Override
     public void publishKnowledgeArticleDraftSaved(KnowledgeArticleDraftEntity draft) {
-        eventWriter.append(TicketIdConverter.toRaw(draft.getSourceTicketId()).toString(), payloadFactory.draftSaved(draft));
+        eventWriter.append(payloadFactory.draftSaved(draft));
     }
 
     @Override
-    public void publishKnowledgeArticleDraftSaveFailed(UUID sourceTicketId,
-                                                       UUID organizationId,
+    public void publishKnowledgeArticleDraftSaveFailed(TicketId sourceTicketId,
+                                                       OrganizationId organizationId,
                                                        DraftSaveFailureCode failureCode,
                                                        String failureMessage) {
-        eventWriter.append(
-                sourceTicketId.toString(),
-                payloadFactory.draftSaveFailed(sourceTicketId, organizationId, failureCode, failureMessage)
-        );
+        eventWriter.append(payloadFactory.draftSaveFailed(sourceTicketId, organizationId, failureCode, failureMessage));
     }
 
     @Override
     public void publishKnowledgeArticlePublished(KnowledgeArticleEntity article) {
-        eventWriter.append(TicketIdConverter.toRaw(article.getSourceTicketId()).toString(), payloadFactory.articlePublished(article));
+        eventWriter.append(payloadFactory.articlePublished(article));
     }
 
     @Override
-    public void publishKnowledgeArticleRejected(KnowledgeArticleDraftEntity draft, UUID rejectedById) {
-        eventWriter.append(TicketIdConverter.toRaw(draft.getSourceTicketId()).toString(), payloadFactory.articleRejected(draft, rejectedById));
+    public void publishKnowledgeArticleRejected(KnowledgeArticleDraftEntity draft, UserId rejectedById) {
+        eventWriter.append(payloadFactory.articleRejected(draft, rejectedById));
     }
 }

@@ -20,7 +20,6 @@ import java.util.List;
 import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 
@@ -55,7 +54,9 @@ class KnowledgeOutboxEventRecorderTest {
         recorder.publishKnowledgeArticlePublished(article);
 
         var eventCaptor = ArgumentCaptor.forClass(Object.class);
-        verify(eventWriter).append(eq(sourceTicketId.toString()), eventCaptor.capture());
+        verify(eventWriter).append(eventCaptor.capture());
         assertThat(eventCaptor.getValue()).isInstanceOf(KnowledgeArticlePublishedPayload.class);
+        assertThat(((KnowledgeArticlePublishedPayload) eventCaptor.getValue()).sourceTicketId())
+                .isEqualTo(sourceTicketId);
     }
 }

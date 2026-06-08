@@ -18,43 +18,36 @@ class KnowledgeOutboxRouteResolverTest {
 
     private static final Clock CLOCK = Clock.fixed(Instant.parse("2026-06-01T12:00:00Z"), ZoneOffset.UTC);
     private static final String ARTICLE_PUBLISHED_EVENT = "KnowledgeArticlePublished";
+    private static final String ARTICLE_PUBLISHED_CONTRACT_KEY = "knowledge-article-published";
 
     @Test
-    void shouldRouteByEventType() {
+    void shouldRouteByContractKey() {
         var resolver = new KnowledgeOutboxRouteResolver(new KnowledgeOutboxRoutingProperties(Map.of(
-                ARTICLE_PUBLISHED_EVENT, "knowledge-management-events"
+                ARTICLE_PUBLISHED_CONTRACT_KEY, "knowledge-management-events"
         )));
 
-        var route = resolver.resolve("ticket-1", IntegrationEventEnvelope.of(
-                ARTICLE_PUBLISHED_EVENT,
-                1,
-                "knowledge-management-service",
-                publishedPayload(),
-                CLOCK
-        ));
+        var route = resolver.resolve("ticket-1", ARTICLE_PUBLISHED_CONTRACT_KEY, publishedEvent());
 
         assertThat(route.topic()).isEqualTo("knowledge-management-events");
         assertThat(route.messageKey()).isEqualTo("ticket-1");
     }
 
     @Test
-    void shouldRejectUnknownEventType() {
+    void shouldRejectUnknownContractKey() {
         var resolver = new KnowledgeOutboxRouteResolver(new KnowledgeOutboxRoutingProperties(Map.of()));
-        var event = publishedEvent();
 
-        assertThatThrownBy(() -> resolver.resolve("ticket-1", event))
+        assertThatThrownBy(() -> resolver.resolve("ticket-1", ARTICLE_PUBLISHED_CONTRACT_KEY, publishedEvent()))
                 .isInstanceOf(KnowledgeOutboxRoutingException.class)
-                .hasMessage("No outbox topic configured for KnowledgeArticlePublished");
+                .hasMessage("No outbox topic configured for knowledge-article-published");
     }
 
     @Test
     void shouldRejectBlankMessageKey() {
         var resolver = new KnowledgeOutboxRouteResolver(new KnowledgeOutboxRoutingProperties(Map.of(
-                ARTICLE_PUBLISHED_EVENT, "knowledge-management-events"
+                ARTICLE_PUBLISHED_CONTRACT_KEY, "knowledge-management-events"
         )));
-        var event = publishedEvent();
 
-        assertThatThrownBy(() -> resolver.resolve(" ", event))
+        assertThatThrownBy(() -> resolver.resolve(" ", ARTICLE_PUBLISHED_CONTRACT_KEY, publishedEvent()))
                 .isInstanceOf(KnowledgeOutboxRoutingException.class)
                 .hasMessage("Message key is required for KnowledgeArticlePublished");
     }

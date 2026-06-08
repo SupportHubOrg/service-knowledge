@@ -128,8 +128,6 @@ application:
       ticket-management-events: ${KAFKA_TOPIC_TICKET_MANAGEMENT_EVENTS:ticket-management-events}
       organization-access-events: ${KAFKA_TOPIC_ORGANIZATION_ACCESS_EVENTS:organization-access-events}
       concurrency: ${KAFKA_CONSUMER_CONCURRENCY:3}
-    producer:
-      knowledge-management-events: ${KAFKA_TOPIC_KNOWLEDGE_MANAGEMENT_EVENTS:knowledge-base-events}
     dlt:
       name: ${KAFKA_TOPIC_KNOWLEDGE_MANAGEMENT_DLT:knowledge-base-events-dlt}
       backoff-ms: ${KAFKA_DLT_BACKOFF_MS:1000}
@@ -153,9 +151,9 @@ application:
     stuck-timeout: ${OUTBOX_STUCK_TIMEOUT:PT2M}
     routing:
       knowledge:
-        # Keyed by the wire eventType.
+        # Keyed by the stable @IntegrationEvent contract key, not the env-overridable wire eventType.
         event-topics:
-          KnowledgeArticleDraftSaved: ${KAFKA_TOPIC_KNOWLEDGE_MANAGEMENT_EVENTS:knowledge-base-events}
-          KnowledgeArticleDraftSaveFailed: ${KAFKA_TOPIC_KNOWLEDGE_MANAGEMENT_EVENTS:knowledge-base-events}
-          KnowledgeArticleApproved: ${KAFKA_TOPIC_KNOWLEDGE_MANAGEMENT_EVENTS:knowledge-base-events}
-          KnowledgeArticleRejected: ${KAFKA_TOPIC_KNOWLEDGE_MANAGEMENT_EVENTS:knowledge-base-events}
+          knowledge-article-draft-saved: ${KAFKA_TOPIC_KNOWLEDGE_MANAGEMENT_EVENTS:knowledge-base-events}
+          knowledge-article-draft-save-failed: ${KAFKA_TOPIC_KNOWLEDGE_MANAGEMENT_EVENTS:knowledge-base-events}
+          knowledge-article-published: ${KAFKA_TOPIC_KNOWLEDGE_MANAGEMENT_EVENTS:knowledge-base-events}
+          knowledge-article-rejected: ${KAFKA_TOPIC_KNOWLEDGE_MANAGEMENT_EVENTS:knowledge-base-events}
