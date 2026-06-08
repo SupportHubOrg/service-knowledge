@@ -1,4 +1,12 @@
-package com.supporthub.knowledge.ai;
+package com.supporthub.knowledge.ai.article.infrastructure;
+
+import com.supporthub.knowledge.draft.application.GeneratedArticleContent;
+
+import com.supporthub.knowledge.draft.application.ArticleGenerationException;
+
+import com.supporthub.knowledge.draft.application.ArticleGenerationContext;
+
+import com.supporthub.knowledge.draft.application.ArticleDraftContentGenerator;
 
 import org.springframework.stereotype.Component;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;

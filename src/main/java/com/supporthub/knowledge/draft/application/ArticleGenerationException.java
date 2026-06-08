@@ -1,4 +1,4 @@
-package com.supporthub.knowledge.ai;
+package com.supporthub.knowledge.draft.application;
 
 /**
  * Thrown by an {@link ArticleDraftContentGenerator} when it cannot produce an article body (e.g. the

@@ -1,4 +1,10 @@
-package com.supporthub.knowledge.ai;
+package com.supporthub.knowledge.ai.article.infrastructure;
+
+import com.supporthub.knowledge.draft.application.ConversationMessage;
+
+import com.supporthub.knowledge.draft.application.ArticleGenerationException;
+
+import com.supporthub.knowledge.draft.application.ArticleGenerationContext;
 
 import org.junit.jupiter.api.Test;
 

@@ -1,4 +1,4 @@
-package com.supporthub.knowledge.ai;
+package com.supporthub.knowledge.draft.application;
 
 /**
  * One message of a ticket conversation, as input to the article content generator.

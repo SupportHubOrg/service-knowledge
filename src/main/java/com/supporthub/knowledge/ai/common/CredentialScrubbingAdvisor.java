@@ -1,4 +1,4 @@
-package com.supporthub.knowledge.ai;
+package com.supporthub.knowledge.ai.common;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.ai.chat.client.ChatClientRequest;

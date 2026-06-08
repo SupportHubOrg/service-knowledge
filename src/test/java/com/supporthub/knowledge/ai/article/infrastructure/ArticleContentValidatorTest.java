@@ -1,4 +1,8 @@
-package com.supporthub.knowledge.ai;
+package com.supporthub.knowledge.ai.article.infrastructure;
+
+import com.supporthub.knowledge.draft.application.ArticleGenerationException;
+
+import com.supporthub.knowledge.ai.common.SecretSanitizer;
 
 import org.junit.jupiter.api.Test;
 

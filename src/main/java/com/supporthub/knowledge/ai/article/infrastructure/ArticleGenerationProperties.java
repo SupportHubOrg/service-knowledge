@@ -1,4 +1,4 @@
-package com.supporthub.knowledge.ai;
+package com.supporthub.knowledge.ai.article.infrastructure;
 
 import org.springframework.boot.context.properties.ConfigurationProperties;
 

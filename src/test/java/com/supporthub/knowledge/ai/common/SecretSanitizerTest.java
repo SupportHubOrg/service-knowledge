@@ -1,4 +1,4 @@
-package com.supporthub.knowledge.ai;
+package com.supporthub.knowledge.ai.common;
 
 import org.junit.jupiter.api.Test;
 

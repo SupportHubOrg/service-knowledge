@@ -1,4 +1,4 @@
-package com.supporthub.knowledge.ai;
+package com.supporthub.knowledge.draft.application;
 
 import java.util.List;
 import java.util.UUID;

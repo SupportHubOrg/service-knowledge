@@ -1,4 +1,4 @@
-package com.supporthub.knowledge.ai;
+package com.supporthub.knowledge.draft.application;
 
 /**
  * Result of article generation: the ready-to-review article body.

@@ -1,4 +1,4 @@
-package com.supporthub.knowledge.ai;
+package com.supporthub.knowledge.draft.application;
 
 /**
  * Port for turning a ticket conversation into a knowledge article body.

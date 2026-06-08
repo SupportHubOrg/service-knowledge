@@ -1,4 +1,14 @@
-package com.supporthub.knowledge.ai;
+package com.supporthub.knowledge.ai.article.infrastructure;
+
+import com.supporthub.knowledge.draft.application.GeneratedArticleContent;
+
+import com.supporthub.knowledge.draft.application.ArticleGenerationException;
+
+import com.supporthub.knowledge.draft.application.ArticleGenerationContext;
+
+import com.supporthub.knowledge.draft.application.ArticleDraftContentGenerator;
+
+import com.supporthub.knowledge.ai.common.SafeAiLoggingAdvisor;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.ai.chat.client.ChatClient;

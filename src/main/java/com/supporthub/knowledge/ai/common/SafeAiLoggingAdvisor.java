@@ -1,4 +1,6 @@
-package com.supporthub.knowledge.ai;
+package com.supporthub.knowledge.ai.common;
+
+import com.supporthub.knowledge.ai.article.infrastructure.ArticleGenerationProperties;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;

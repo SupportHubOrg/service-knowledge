@@ -1,8 +1,5 @@
 package com.supporthub.knowledge.draft.application;
 
-import com.supporthub.knowledge.ai.ArticleDraftContentGenerator;
-import com.supporthub.knowledge.ai.ArticleGenerationContext;
-import com.supporthub.knowledge.ai.ConversationMessage;
 import com.supporthub.knowledge.draft.domain.DraftId;
 import com.supporthub.knowledge.messaging.event.DraftSaveFailureCode;
 import com.supporthub.knowledge.ticket.application.TicketConversationProjection;
