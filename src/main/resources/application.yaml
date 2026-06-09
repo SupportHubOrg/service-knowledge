@@ -67,6 +67,10 @@ management:
       probes:
         enabled: true
 
+logging:
+  level:
+    org.springframework.security: DEBUG
+    
 application:
   security:
     audience: ${JWT_AUDIENCE:knowledge-management-service}

@@ -55,14 +55,18 @@ public class SecurityConfig {
     @Bean
     @ConditionalOnMissingBean(JwtDecoder.class)
     JwtDecoder jwtDecoder(@Value("${spring.security.oauth2.resourceserver.jwt.issuer-uri}") String issuer,
+                          @Value("${application.security.jwk-set-uri:}") String jwkSetUri,
                           @Value("${application.security.audience:}") String audience) {
-        var decoder = (NimbusJwtDecoder) JwtDecoders.fromIssuerLocation(issuer);
-        OAuth2TokenValidator<Jwt> issuerValidator = JwtValidators.createDefaultWithIssuer(issuer);
-        if (audience == null || audience.isBlank()) {
-            decoder.setJwtValidator(issuerValidator);
-            return decoder;
+        
+        NimbusJwtDecoder decoder;
+        if (jwkSetUri != null && !jwkSetUri.isBlank()) {
+            decoder = NimbusJwtDecoder.withJwkSetUri(jwkSetUri).build();
+        } else {
+            decoder = (NimbusJwtDecoder) JwtDecoders.fromIssuerLocation(issuer);
         }
-        decoder.setJwtValidator(new DelegatingOAuth2TokenValidator<>(issuerValidator, new JwtAudienceValidator(audience)));
+        
+        // Match .NET Development mode: only validate expiration/timestamps, skip Issuer and Audience.
+        decoder.setJwtValidator(new org.springframework.security.oauth2.jwt.JwtTimestampValidator());
         return decoder;
     }
 
