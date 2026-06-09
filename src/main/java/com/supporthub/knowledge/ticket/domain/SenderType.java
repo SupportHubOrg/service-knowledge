@@ -13,8 +13,12 @@ public enum SenderType {
         if (wireValue == null) {
             throw new BusinessValidationException("Sender type must not be null");
         }
+        String normalized = wireValue.trim().toUpperCase();
+        if (normalized.equals("LEVEL_1_OPERATOR") || normalized.equals("LEVEL_2_OPERATOR")) {
+            return OPERATOR;
+        }
         try {
-            return SenderType.valueOf(wireValue.trim().toUpperCase());
+            return SenderType.valueOf(normalized);
         } catch (IllegalArgumentException exception) {
             throw new BusinessValidationException("Unknown sender type: " + wireValue);
         }
