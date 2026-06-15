@@ -1,10 +1,10 @@
 apiVersion: v1
 kind: Service
 metadata:
-  name: service-knowledge
+  name: knowledge-base
 spec:
   selector:
-    app: service-knowledge
+    app: knowledge-base
   ports:
     - protocol: TCP
       port: 80

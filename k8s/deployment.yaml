@@ -1,25 +1,50 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: service-knowledge
+  name: knowledge-base
   labels:
-    app: service-knowledge
+    app: knowledge-base
 spec:
-  replicas: 2
+  replicas: 1
   selector:
     matchLabels:
-      app: service-knowledge
+      app: knowledge-base
   template:
     metadata:
       labels:
-        app: service-knowledge
+        app: knowledge-base
     spec:
+      initContainers:
+      - name: wait-for-keycloak
+        image: busybox:1.36
+        command: ['sh', '-c', 'until wget -q -O - http://keycloak.default.svc.cluster.local:9000/health/ready; do echo "Waiting for Keycloak..."; sleep 5; done;']
       containers:
-      - name: service-knowledge
-        #Replace with actual container registry URL
-        image: your-registry.com/issueresolutionorg/service-knowledge:latest
+      - name: knowledge-base
+        image: your-registry.com/supporthub/knowledge-base:latest
+        imagePullPolicy: IfNotPresent
         ports:
         - containerPort: 8080
         envFrom:
         - configMapRef:
-            name: service-knowledge-config
+            name: knowledge-base-config
+        - secretRef:
+            name: knowledge-base-secret
+        env:
+        - name: JAVA_TOOL_OPTIONS
+          value: "-Xmx1024m"
+        livenessProbe:
+          httpGet:
+            path: /actuator/health/liveness
+            port: 8080
+          initialDelaySeconds: 300
+          periodSeconds: 10
+          timeoutSeconds: 10
+          failureThreshold: 60
+        readinessProbe:
+          httpGet:
+            path: /actuator/health/readiness
+            port: 8080
+          initialDelaySeconds: 300
+          periodSeconds: 10
+          timeoutSeconds: 10
+          failureThreshold: 60
