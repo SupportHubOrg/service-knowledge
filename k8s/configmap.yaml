@@ -9,8 +9,8 @@ data:
   KAFKA_BOOTSTRAP_SERVERS: "kafka-cluster-kafka-bootstrap:9092"
   KAFKA_CONSUMER_GROUP: "knowledge-base-service"
   #Security / Keycloak (Routing to internal cluster DNS)
-  JWT_ISSUER_URI: "http://keycloak.default.svc.cluster.local:8080/realms/supporthub"
-  SPRING_SECURITY_OAUTH2_RESOURCESERVER_JWT_JWK_SET_URI: "http://keycloak.default.svc.cluster.local:8080/realms/supporthub/protocol/openid-connect/certs"
+  JWT_ISSUER_URI: "http://keycloak.default.svc.cluster.local/realms/supporthub"
+  SPRING_SECURITY_OAUTH2_RESOURCESERVER_JWT_JWK_SET_URI: "http://keycloak.default.svc.cluster.local/realms/supporthub/protocol/openid-connect/certs"
   JWT_AUDIENCE: "knowledge-base-service"
   #Core Event Topics
   KAFKA_TOPIC_TICKET_MANAGEMENT_EVENTS: "ticket-management-events"
